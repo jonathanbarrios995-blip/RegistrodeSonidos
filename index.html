@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    
+    <!-- ========================================================== -->
+    <!-- CAMBIA AQUÍ EL NOMBRE DE TU APP PARA LA PESTAÑA DEL NAVEGADOR -->
     <title>SoniTrack</title>
     
-    <!-- Metaetiquetas para comportarse como App Nativa en iPhone (PWA) -->
+    <!-- CAMBIA AQUÍ EL NOMBRE QUE APARECERÁ BAJO EL ICONO EN TU IPHONE -->
+    <meta name="App Sonidos" content="SoniTrack">
+    <!-- ========================================================== -->
+
+    <!-- Metaetiquetas para modo App Nativa en iPhone (PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SoniTrack">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%2316a34a'><circle cx='50' cy='50' r='50'/><path d='M35 50h30M50 35v30' stroke='white' stroke-width='8' stroke-linecap='round'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%2322c55e'><circle cx='50' cy='50' r='50'/><path d='M35 50h30M50 35v30' stroke='white' stroke-width='8' stroke-linecap='round'/></svg>">
 
-    <!-- Tailwind CSS para el diseño visual premium -->
+    <!-- Tailwind CSS para diseño visual premium -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,7 +45,7 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        /* Previene el scroll por rebote molesto en iOS */
+        /* Previene scroll molesto o rebotes elásticos en iOS Safari */
         body {
             position: fixed;
             width: 100%;
@@ -48,18 +54,17 @@
             background-color: #020617;
         }
         .scrollable-content {
-            height: 100%;
+            height: calc(100% - 130px);
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
-        .active-tab {
-            background-color: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
-            border-color: rgba(34, 197, 94, 0.3);
+        /* Ocultar barra de scroll para vista minimalista */
+        .scrollable-content::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
-<body class="text-slate-100 font-sans flex flex-col h-full w-full">
+<body class="text-slate-100 font-sans flex flex-col h-full w-full select-none">
 
     <!-- REPRODUCTOR GLOBAL PARA SAFARI EN IPHONE -->
     <audio id="global-audio-player" playsinline style="display:none;"></audio>
@@ -74,296 +79,239 @@
                     </svg>
                 </div>
                 <div>
+                    <!-- CAMBIA AQUÍ EL TÍTULO QUE SE MUESTRA EN LA CABECERA -->
                     <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">SoniTrack</h1>
                     <p class="text-[10px] text-slate-400">Control de Sonidos Permanente</p>
                 </div>
             </div>
 
-            <!-- NAVEGACIÓN PRINCIPAL (TABS / PÁGINAS) -->
-            <nav class="hidden md:flex items-center space-x-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">🎙️ Grabadora</button>
-                <button onclick="switchTab('history')" id="btn-tab-history" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">📋 Historial</button>
-                <button onclick="switchTab('analytics')" id="btn-tab-analytics" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">📊 Analíticas</button>
-                <button onclick="switchTab('settings')" id="btn-tab-settings" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">⚙️ Ajustes</button>
-            </nav>
-
-            <div class="flex items-center space-x-2">
-                <div id="sync-badge" class="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-full text-[10px]">
-                    <span id="sync-indicator" class="h-2 w-2 rounded-full bg-blue-500"></span>
-                    <span id="sync-text" class="text-slate-400 font-semibold uppercase">Modo Local</span>
-                </div>
+            <!-- Badge de Estado del almacenamiento -->
+            <div id="sync-badge" class="flex items-center space-x-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1.5 rounded-full text-[10px]">
+                <span id="sync-indicator" class="h-2 w-2 rounded-full bg-blue-500"></span>
+                <span id="sync-text" class="text-slate-400 font-semibold uppercase">Modo Local</span>
             </div>
         </div>
     </header>
 
-    <!-- NAVEGACIÓN MÓVIL INFERIOR -->
-    <div class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800 py-2.5 px-4 flex justify-around items-center z-50 shrink-0">
-        <button onclick="switchTab('dashboard')" id="btn-mob-dashboard" class="flex flex-col items-center space-y-1 text-slate-400">
-            <span class="text-lg">🎙️</span>
-            <span class="text-[9px] font-medium">Grabadora</span>
-        </button>
-        <button onclick="switchTab('history')" id="btn-mob-history" class="flex flex-col items-center space-y-1 text-slate-400">
-            <span class="text-lg">📋</span>
-            <span class="text-[9px] font-medium">Historial</span>
-        </button>
-        <button onclick="switchTab('analytics')" id="btn-mob-analytics" class="flex flex-col items-center space-y-1 text-slate-400">
-            <span class="text-lg">📊</span>
-            <span class="text-[9px] font-medium">Analíticas</span>
-        </button>
-        <button onclick="switchTab('settings')" id="btn-mob-settings" class="flex flex-col items-center space-y-1 text-slate-400">
-            <span class="text-lg">⚙️</span>
-            <span class="text-[9px] font-medium">Ajustes</span>
-        </button>
-    </div>
-
     <!-- BANNER DE UNIÓN/DESBLOQUEO EN IOS SAFARI -->
     <div id="ios-unblock-banner" class="bg-brand-900/30 border-b border-brand-500/20 text-brand-200 text-[11px] px-4 py-2 text-center shrink-0">
-        📢 <span class="font-bold">Usuario de iPhone:</span> Toca en cualquier parte para habilitar el reproductor inteligente de sonidos de fondo.
+        📢 <span class="font-bold">Usuario de iPhone:</span> Toca la pantalla una vez para habilitar el reproductor.
     </div>
 
-    <!-- CONTENEDOR PRINCIPAL SCROLLEABLE -->
-    <div class="flex-grow scrollable-content p-4">
-        <div class="max-w-6xl mx-auto pb-24">
+    <!-- CONTENIDO DE LAS PÁGINAS (SPA) -->
+    <main class="flex-grow scrollable-content p-4">
+        <div class="max-w-md mx-auto w-full h-full">
 
-            <!-- ================= PÁGINA 1: GRABADORA Y PANEL DE REGISTRO ================= -->
-            <section id="page-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- PANEL FORMULARIO -->
-                <div class="lg:col-span-6 space-y-6">
-                    <div class="glass rounded-3xl p-5 shadow-2xl space-y-5 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                        
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                            <h2 class="text-base font-bold text-white flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <!-- PÁGINA 1: GRABADORA (POR DEFECTO) -->
+            <section id="page-recorder" class="space-y-4">
+                <div class="glass rounded-3xl p-5 shadow-2xl space-y-5 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                            Registrar Ruido
+                        </h2>
+                        <span class="text-[9px] text-brand-500 font-bold uppercase tracking-wider bg-brand-500/10 px-2 py-0.5 rounded-full">Grabador</span>
+                    </div>
+
+                    <!-- BOTÓN DE GRABADO -->
+                    <div class="flex flex-col items-center justify-center space-y-3 py-1">
+                        <button id="btn-record" class="group relative w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center focus:outline-none transition-all duration-300 hover:border-brand-500 hover:scale-105 active:scale-95 shadow-xl">
+                            <span id="record-ring" class="absolute inset-0 rounded-full border-4 border-red-500 opacity-0 transition-all duration-300"></span>
+                            <div id="record-icon" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                                 </svg>
-                                Registrar Ruido Permanente
-                            </h2>
-                            <span class="text-[10px] text-brand-500 font-bold uppercase tracking-wider bg-brand-500/10 px-2.5 py-1 rounded-full">Capturador</span>
+                            </div>
+                        </button>
+
+                        <div class="text-center">
+                            <p id="record-status" class="text-xs font-semibold text-slate-300">Presiona para grabar</p>
+                            <p id="record-timer" class="text-[10px] text-slate-500 font-mono mt-0.5">00:00</p>
                         </div>
 
-                        <!-- GESTOR DE AUDIO / SEGURO DE SEGURIDAD -->
-                        <div id="mic-security-warning" class="hidden bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 text-xs text-amber-200">
-                            ⚠️ <strong>Modo Simulación Activo:</strong> Tu navegador o conexión local (HTTP) restringe el micrófono. Podrás ingresar notas y generar un sonido sintetizado ideal de muestra para probar la app.
-                        </div>
-
-                        <!-- BOTÓN DE GRABADO -->
-                        <div class="flex flex-col items-center justify-center space-y-3 py-2">
-                            <button id="btn-record" class="group relative w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center focus:outline-none transition-all duration-300 hover:border-brand-500 hover:scale-105 active:scale-95 shadow-xl">
-                                <span id="record-ring" class="absolute inset-0 rounded-full border-4 border-red-500 opacity-0 transition-all duration-300"></span>
-                                <div id="record-icon" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                    </svg>
-                                </div>
-                            </button>
-
-                            <div class="text-center">
-                                <p id="record-status" class="text-xs font-semibold text-slate-300">Presiona para grabar</p>
-                                <p id="record-timer" class="text-[10px] text-slate-500 font-mono mt-0.5">00:00</p>
-                            </div>
-
-                            <!-- VISUALIZADOR DE ONDAS -->
-                            <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-2 h-16 overflow-hidden relative">
-                                <canvas id="wave-canvas" class="w-full h-full block"></canvas>
-                                <div id="no-signal-text" class="absolute inset-0 flex items-center justify-center text-[10px] text-slate-600 font-medium">Gráfica en reposo</div>
-                            </div>
-                        </div>
-
-                        <!-- FORMULARIO DE CATEGORÍAS -->
-                        <form id="sound-form" class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría del Sonido</label>
-                                <select id="sound-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500" required>
-                                    <option value="Perro ladrando">🐶 Perro ladrando</option>
-                                    <option value="Golpe en la pared">🧱 Golpe en la pared</option>
-                                    <option value="Musica Fuerte">🔊 Música Fuerte</option>
-                                    <option value="Otro sonido">✨ Otro sonido molesto</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nivel de Molestia / Intensidad</label>
-                                    <span id="intensity-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">Media</span>
-                                </div>
-                                <input type="range" id="sound-intensity" min="1" max="3" value="2" class="w-full accent-brand-500 bg-slate-800 h-1.5 rounded-lg">
-                            </div>
-
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notas / Detalles Adicionales</label>
-                                <textarea id="sound-notes" rows="2" placeholder="Escribe detalles del origen del ruido..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
-                            </div>
-
-                            <button type="submit" id="btn-save" disabled class="w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                                </svg>
-                                <span>Guardar Registro</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- CARGA DE CONTENIDO INICIAL O RÁPIDO -->
-                <div class="lg:col-span-6 space-y-6">
-                    <div class="glass rounded-3xl p-5 shadow-2xl space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                            <h3 class="text-sm font-bold text-white">Consejos de Operación</h3>
-                            <span class="text-[9px] text-slate-400">Modo Permanente</span>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            SoniTrack permite registrar y almacenar evidencias acústicas directamente en tu dispositivo. Puedes exportarlas en formato CSV para reclamar legalmente. 
-                        </p>
-                        <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 space-y-2">
-                            <span class="text-[10px] font-bold text-brand-500 uppercase">¿No ves ningún registro?</span>
-                            <p class="text-[11px] text-slate-300">
-                                Ve a la pestaña de <strong>⚙️ Ajustes</strong> y presiona <strong>"Cargar datos de demostración"</strong> para rellenar automáticamente la base de datos con ruidos de prueba realistas.
-                            </p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                            <button onclick="switchTab('history')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all text-center">
-                                Ver Lista Completa 📋
-                            </button>
-                            <button onclick="switchTab('settings')" class="flex-1 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 px-3 rounded-xl text-xs transition-all text-center">
-                                Configurar Nube / Cargar Demos 🚀
-                            </button>
+                        <!-- VISUALIZADOR DE ONDAS -->
+                        <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-2 h-14 overflow-hidden relative">
+                            <canvas id="wave-canvas" class="w-full h-full block"></canvas>
+                            <div id="no-signal-text" class="absolute inset-0 flex items-center justify-center text-[9px] text-slate-600 font-medium">Micrófono apagado</div>
                         </div>
                     </div>
+
+                    <!-- FORMULARIO DE CATEGORÍAS -->
+                    <form id="sound-form" class="space-y-3">
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría de Ruido</label>
+                            <select id="sound-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" required>
+                                <option value="Perro ladrando">🐶 Perro ladrando</option>
+                                <option value="Golpe en la pared">🧱 Golpe en la pared</option>
+                                <option value="Musica Fuerte">🔊 Musica Fuerte</option>
+                                <option value="Otro sonido">✨ Otro sonido</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Intensidad</label>
+                                <span id="intensity-badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">Media</span>
+                            </div>
+                            <input type="range" id="sound-intensity" min="1" max="3" value="2" class="w-full accent-brand-500 bg-slate-800 h-1 rounded-lg">
+                        </div>
+
+                        <div>
+                            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notas / Detalles</label>
+                            <textarea id="sound-notes" rows="2" placeholder="Describe brevemente el ruido..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" id="btn-save" disabled class="w-full bg-slate-800 text-slate-500 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            <span>Guardar Registro</span>
+                        </button>
+                    </form>
                 </div>
             </section>
 
-            <!-- ================= PÁGINA 2: HISTORIAL DE RUIDOS ================= -->
-            <section id="page-history" class="hidden space-y-6">
-                <!-- METRICAS DE HOY -->
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Historial Total</span>
-                        <span id="stat-total" class="text-xl font-black text-white mt-1">0</span>
-                    </div>
-                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Registros Hoy</span>
-                        <span id="stat-today" class="text-xl font-black text-brand-400 mt-1">0</span>
-                    </div>
-                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
-                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Nivel Crítico</span>
-                        <span id="stat-critical" class="text-xl font-black text-red-500 mt-1">0</span>
-                    </div>
-                </div>
-
-                <div class="glass rounded-3xl p-5 shadow-2xl flex flex-col">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-4">
+            <!-- PÁGINA 2: HISTORIAL -->
+            <section id="page-history" class="space-y-4 hidden">
+                <div class="glass rounded-3xl p-5 shadow-2xl flex flex-col min-h-[450px]">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
                         <div>
-                            <h2 class="text-base font-bold text-white">Historial de Ruidos</h2>
-                            <p class="text-[10px] text-slate-500">Registros almacenados permanentemente en tu iPhone/Navegador</p>
+                            <h2 class="text-sm font-bold text-white">Historial de Ruidos</h2>
+                            <p class="text-[9px] text-slate-500">Registros almacenados permanentemente en tu iPhone</p>
                         </div>
 
-                        <!-- Filtros e Importar/Exportar -->
-                        <div class="flex flex-wrap items-center gap-2">
-                            <select id="filter-category" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                        <div class="flex items-center gap-1.5">
+                            <select id="filter-category" class="bg-slate-900 border border-slate-800 text-[9px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
                                 <option value="all">Ver todos</option>
                                 <option value="Perro ladrando">🐶 Perros</option>
                                 <option value="Golpe en la pared">🧱 Golpes</option>
                                 <option value="Musica Fuerte">🔊 Música</option>
                                 <option value="Otro sonido">✨ Otros</option>
                             </select>
-                            <button id="btn-export-csv" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-3 py-1.5 flex items-center gap-1 transition-all">
-                                📊 Exportar CSV
+                            <button id="btn-export-csv" class="bg-slate-900 border border-slate-800 text-[9px] text-slate-300 rounded-lg px-2 py-1 flex items-center gap-1">
+                                <span>CSV</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Lista de registros -->
-                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1" id="sound-list">
-                        <!-- El listado se carga vía JS -->
+                    <!-- Lista de registros dinámicos -->
+                    <div class="space-y-3 flex-grow overflow-y-auto pr-1" id="sound-list">
+                        <!-- Se llena vía JS -->
                     </div>
                 </div>
             </section>
 
-            <!-- ================= PÁGINA 3: ANALÍTICAS GRÁFICAS ================= -->
-            <section id="page-analytics" class="hidden space-y-6">
-                <div class="glass rounded-3xl p-5 shadow-2xl space-y-6">
+            <!-- PÁGINA 3: ANALÍTICAS -->
+            <section id="page-analytics" class="space-y-4 hidden">
+                <div class="glass rounded-3xl p-5 shadow-2xl space-y-4">
                     <div>
-                        <h2 class="text-base font-bold text-white">Análisis Estadístico</h2>
-                        <p class="text-[10px] text-slate-500">Distribución de molestias registradas</p>
+                        <h2 class="text-sm font-bold text-white">Analíticas Rápidas</h2>
+                        <p class="text-[9px] text-slate-500">Métricas analizadas de tus registros actuales</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Gráfico de distribución de ruidos -->
-                        <div class="bg-slate-900/40 p-4 border border-slate-800/60 rounded-2xl flex flex-col justify-between">
-                            <span class="text-xs font-bold text-white mb-4 block">Eventos por Categoría</span>
-                            
-                            <!-- Contenedor barras dinámicas -->
-                            <div class="space-y-3" id="analytics-categories">
-                                <!-- Cargado dinámicamente -->
-                            </div>
+                    <!-- Tarjetas de métricas -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-slate-900/60 border border-slate-800 p-2.5 rounded-2xl text-center">
+                            <span class="text-[8px] uppercase tracking-wider text-slate-400 block">Total</span>
+                            <span id="stat-total" class="text-lg font-black text-white">0</span>
                         </div>
+                        <div class="bg-slate-900/60 border border-slate-800 p-2.5 rounded-2xl text-center">
+                            <span class="text-[8px] uppercase tracking-wider text-slate-400 block">Hoy</span>
+                            <span id="stat-today" class="text-lg font-black text-brand-400">0</span>
+                        </div>
+                        <div class="bg-slate-900/60 border border-slate-800 p-2.5 rounded-2xl text-center">
+                            <span class="text-[8px] uppercase tracking-wider text-slate-400 block">Críticos</span>
+                            <span id="stat-critical" class="text-lg font-black text-red-500">0</span>
+                        </div>
+                    </div>
 
-                        <!-- Panel de estadísticas por horarios críticos -->
-                        <div class="bg-slate-900/40 p-4 border border-slate-800/60 rounded-2xl flex flex-col justify-between">
-                            <span class="text-xs font-bold text-white mb-4 block">Distribución de Intensidades</span>
-                            
-                            <!-- Contenedor barras dinámicas -->
-                            <div class="space-y-3" id="analytics-intensities">
-                                <!-- Cargado dinámicamente -->
-                            </div>
+                    <!-- Gráfico analítico SVG integrado -->
+                    <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between h-44">
+                        <span class="text-[9px] font-semibold text-slate-400">Distribución de Intensidad</span>
+                        <div id="analytics-bars" class="flex items-end justify-around h-28 pt-2">
+                            <!-- Columnas dinámicas de analíticas -->
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ================= PÁGINA 4: CONFIGURACIÓN Y BASES DE DATOS ================= -->
-            <section id="page-settings" class="hidden space-y-6">
-                <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
+            <!-- PÁGINA 4: AJUSTES -->
+            <section id="page-settings" class="space-y-4 hidden">
+                <div class="glass rounded-3xl p-5 shadow-2xl space-y-4">
                     <div>
-                        <h2 class="text-base font-bold text-white">Configuración del Almacenamiento</h2>
-                        <p class="text-[10px] text-slate-500">Configura la nube opcional de Firebase o gestiona tus datos locales.</p>
+                        <h2 class="text-sm font-bold text-white">Ajustes Generales</h2>
+                        <p class="text-[9px] text-slate-500">Personaliza y gestiona las conexiones de tu app</p>
                     </div>
 
-                    <!-- BOTONES ACCIÓN RÁPIDA -->
-                    <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-                        <span class="text-[10px] font-bold text-brand-500 uppercase tracking-widest block">Inicialización rápida</span>
-                        <p class="text-xs text-slate-400 leading-relaxed">¿La aplicación está vacía? Presiona el botón de abajo para cargar ruidos e incidentes realistas simulados al instante:</p>
-                        <button id="btn-load-demos" class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-slate-950 font-black py-2.5 px-5 rounded-xl text-xs transition-all shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
-                            ✨ Cargar Datos de Demostración
+                    <!-- Datos de Demostración -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3.5 rounded-2xl space-y-2">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Herramientas de Prueba</span>
+                        <p class="text-[10px] text-slate-500">Si aún no tienes ruidos capturados, genera registros de demostración para probar los gráficos y las pestañas.</p>
+                        <button id="btn-load-demo" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs transition-all">
+                            Cargar Datos de Demostración
                         </button>
                     </div>
 
-                    <!-- FIREBASE CONFIG -->
-                    <div class="space-y-4 pt-2">
-                        <h3 class="text-xs font-bold text-slate-300">Sincronización en la Nube (Opcional)</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Si deseas sincronizar tus ruidos en tiempo real en varios dispositivos de forma permanente, ingresa las credenciales JSON de tu proyecto Firebase Firestore de manera segura aquí:
-                        </p>
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Configuración JSON de Firebase</label>
-                            <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", ...}' class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-[10px] font-mono text-white focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                    <!-- Configuración Firebase Nube -->
+                    <div class="bg-slate-900/40 border border-slate-800 p-3.5 rounded-2xl space-y-3">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Sincronización en la Nube (Opcional)</span>
+                        <p class="text-[10px] text-slate-500">Pega las credenciales de tu proyecto Firebase para guardar ruidos en la nube en tiempo real.</p>
+                        <textarea id="firebase-config-input" rows="3" placeholder='{"apiKey": "...", "authDomain": "...", ...}' class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-[9px] font-mono text-white focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                        
+                        <div class="flex space-x-2">
+                            <button id="btn-save-settings" class="flex-grow bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 rounded-xl text-xs transition-all">Conectar</button>
+                            <button id="btn-clear-settings" class="bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold py-2 px-3 rounded-xl text-xs transition-all">Desconectar</button>
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <button id="btn-save-settings" class="flex-grow bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 rounded-xl text-xs transition-all">Guardar y Conectar</button>
-                            <button id="btn-clear-settings" class="bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold py-2 px-3 rounded-xl text-xs transition-all">Desconectar Nube</button>
-                        </div>
-                    </div>
-
-                    <!-- ACCIONES DE PURGA -->
-                    <div class="border-t border-slate-800 pt-4 space-y-3">
-                        <h3 class="text-xs font-bold text-red-500">Sección Peligrosa</h3>
-                        <p class="text-xs text-slate-400">¿Quieres restablecer la base de datos de tu teléfono?</p>
-                        <button id="btn-purge-local" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs transition-all">
-                            🗑️ Borrar Todo el Historial Local
-                        </button>
                     </div>
                 </div>
             </section>
 
         </div>
-    </div>
+    </main>
+
+    <!-- BARRA DE NAVEGACIÓN INFERIOR ESTILO iOS -->
+    <nav class="w-full glass border-t border-slate-800 px-4 py-2 shrink-0 z-40 fixed bottom-0 left-0 right-0">
+        <div class="max-w-md mx-auto flex items-center justify-around">
+            <button onclick="switchTab('recorder')" id="nav-recorder" class="flex flex-col items-center space-y-1 text-brand-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <span class="text-[9px] font-semibold">Grabar</span>
+            </button>
+
+            <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                <span class="text-[9px] font-semibold">Historial</span>
+            </button>
+
+            <button onclick="switchTab('analytics')" id="nav-analytics" class="flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                </svg>
+                <span class="text-[9px] font-semibold">Analíticas</span>
+            </button>
+
+            <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="text-[9px] font-semibold">Ajustes</span>
+            </button>
+        </div>
+    </nav>
 
     <!-- MODAL DE CONFIRMACIÓN INTEGRADO (Para evitar bloqueos en iPhone) -->
     <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
         <div class="glass w-full max-w-xs rounded-2xl p-5 space-y-4 text-center">
             <h4 class="text-sm font-bold text-white">¿Confirmas la eliminación?</h4>
-            <p class="text-xs text-slate-400">Esta acción no se puede deshacer y borrará el registro para siempre.</p>
+            <p class="text-xs text-slate-400">Esta acción no se puede deshacer y borrará el registro de forma permanente.</p>
             <div class="flex space-x-2">
                 <button id="btn-confirm-yes" class="flex-grow bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs">Eliminar</button>
                 <button id="btn-confirm-no" class="flex-grow bg-slate-800 text-slate-300 font-bold py-2 rounded-xl text-xs">Cancelar</button>
@@ -372,16 +320,31 @@
     </div>
 
     <!-- NOTIFICACIONES TOAST -->
-    <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4"></div>
+    <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none px-4"></div>
 
-    <!-- CARGA DE SCRIPTS SEGUROS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // CONFIGURACIÓN LOCAL (SISTEMA DE RESPALDO INTEGRADO)
-        let soundsList = JSON.parse(localStorage.getItem('sonitrack_local_v2')) || [];
+        // CONFIGURACIÓN LOCAL CON MIGRACIÓN INTELIGENTE DE DATOS
+        let soundsList = [];
+        try {
+            // Intentamos leer el formato nuevo (v2), si no el anterior (sonitrack_local), y si no vacío
+            const legacyData = localStorage.getItem('sonitrack_local');
+            const currentData = localStorage.getItem('sonitrack_local_v2');
+            
+            if (currentData) {
+                soundsList = JSON.parse(currentData);
+            } else if (legacyData) {
+                soundsList = JSON.parse(legacyData);
+                // Migramos automáticamente al nuevo formato consolidado v2
+                localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
+            }
+        } catch (e) {
+            console.error("Error al migrar datos anteriores:", e);
+        }
+
         let firebaseApp = null;
         let db = null;
         let auth = null;
@@ -410,18 +373,18 @@
         const statTotal = document.getElementById('stat-total');
         const statToday = document.getElementById('stat-today');
         const statCritical = document.getElementById('stat-critical');
+        const analyticsBars = document.getElementById('analytics-bars');
 
-        // Ajustes y Configs
+        // Configuración y Estado de la Base de Datos
         const firebaseConfigInput = document.getElementById('firebase-config-input');
         const btnSaveSettings = document.getElementById('btn-save-settings');
         const btnClearSettings = document.getElementById('btn-clear-settings');
-        const btnLoadDemos = document.getElementById('btn-load-demos');
-        const btnPurgeLocal = document.getElementById('btn-purge-local');
+        const btnLoadDemo = document.getElementById('btn-load-demo');
         
         const syncIndicator = document.getElementById('sync-indicator');
         const syncText = document.getElementById('sync-text');
 
-        // Modales y Toasts
+        // Modales
         const confirmModal = document.getElementById('confirm-modal');
         const btnConfirmYes = document.getElementById('btn-confirm-yes');
         const btnConfirmNo = document.getElementById('btn-confirm-no');
@@ -442,95 +405,7 @@
         let dataArray = null;
         let animationId = null;
 
-        // SINTETIZADOR INTELIGENTE DE AUDIO (Para probar sonidos cuando se reproducen en iPhone)
-        function synthesizeSoundEffect(category, intensity) {
-            try {
-                const SynthContext = window.AudioContext || window.webkitAudioContext;
-                if (!SynthContext) return;
-                const ctx = new SynthContext();
-                
-                const masterVolume = ctx.createGain();
-                masterVolume.gain.setValueAtTime(parseFloat(intensity) * 0.25, ctx.currentTime);
-                masterVolume.connect(ctx.destination);
-
-                if (category === "Perro ladrando") {
-                    // Simulación de ladrido (Pitch envelope rápido)
-                    for (let i = 0; i < 2; i++) {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'triangle';
-                        
-                        const start = ctx.currentTime + (i * 0.35);
-                        osc.frequency.setValueAtTime(220, start);
-                        osc.frequency.exponentialRampToValueAtTime(120, start + 0.15);
-                        
-                        gain.gain.setValueAtTime(0, start);
-                        gain.gain.linearRampToValueAtTime(0.8, start + 0.03);
-                        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.18);
-                        
-                        osc.connect(gain);
-                        gain.connect(masterVolume);
-                        osc.start(start);
-                        osc.stop(start + 0.2);
-                    }
-                } else if (category === "Golpe en la pared") {
-                    // Golpe seco (Low thud)
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    
-                    osc.frequency.setValueAtTime(80, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.2);
-                    
-                    gain.gain.setValueAtTime(1, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-                    
-                    osc.connect(gain);
-                    gain.connect(masterVolume);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.3);
-                } else if (category === "Musica Fuerte") {
-                    // Música bailable (Loop de bombo rápido)
-                    for (let i = 0; i < 4; i++) {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        
-                        const start = ctx.currentTime + (i * 0.4);
-                        osc.frequency.setValueAtTime(110, start);
-                        osc.frequency.exponentialRampToValueAtTime(40, start + 0.15);
-                        
-                        gain.gain.setValueAtTime(0.8, start);
-                        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.25);
-                        
-                        osc.connect(gain);
-                        gain.connect(masterVolume);
-                        osc.start(start);
-                        osc.stop(start + 0.3);
-                    }
-                } else {
-                    // Sparkling chime para otros
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    
-                    osc.frequency.setValueAtTime(880, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.3);
-                    
-                    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-                    
-                    osc.connect(gain);
-                    gain.connect(masterVolume);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.5);
-                }
-            } catch (err) {
-                console.warn("No se pudo iniciar el sintetizador por permisos del navegador", err);
-            }
-        }
-
-        // DESBLOQUEO DE AUDIO EN IPHONE (Safari)
+        // ACTIVAR AUDIO EN IPHONE (Safari bloquea audio si no hay acción manual previa)
         function unlockAudioForSafari() {
             if (audioUnlocked) return;
             globalPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
@@ -540,13 +415,13 @@
                 if (banner) banner.remove();
             }).catch(() => {});
         }
-        document.addEventListener('click', unlockAudioForSafari, { once: false });
+        document.body.addEventListener('click', unlockAudioForSafari, { once: false });
 
         // TOASTS PERSONALIZADOS
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = 'p-3 rounded-xl border text-xs shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto';
+            toast.className = 'p-3 rounded-xl border text-xs shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto text-center';
             if (type === 'success') toast.className += ' bg-slate-900 border-brand-500/20 text-brand-400';
             else if (type === 'error') toast.className += ' bg-slate-900 border-red-500/20 text-red-400';
             else toast.className += ' bg-slate-900 border-blue-500/20 text-blue-400';
@@ -557,21 +432,38 @@
             setTimeout(() => {
                 toast.classList.add('opacity-0', '-translate-y-2');
                 setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            }, 2500);
         }
 
-        // CONTROL INTENSIDAD RUIDO
+        // ENRUTADOR DEL MENÚ DE PESTAÑAS (SPA)
+        window.switchTab = function(tabId) {
+            const pages = ['recorder', 'history', 'analytics', 'settings'];
+            pages.forEach(p => {
+                const element = document.getElementById(`page-${p}`);
+                const navBtn = document.getElementById(`nav-${p}`);
+                if (p === tabId) {
+                    element.classList.remove('hidden');
+                    navBtn.className = "flex flex-col items-center space-y-1 text-brand-500";
+                } else {
+                    element.classList.add('hidden');
+                    navBtn.className = "flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-200";
+                }
+            });
+            renderHistory();
+        };
+
+        // CONTROL DE INTENSIDAD RUIDO
         soundIntensity.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
             if (val === 1) {
                 intensityBadge.textContent = "Baja";
-                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400";
+                intensityBadge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-400";
             } else if (val === 2) {
                 intensityBadge.textContent = "Media";
-                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400";
+                intensityBadge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400";
             } else {
                 intensityBadge.textContent = "Crítica";
-                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400";
+                intensityBadge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400";
             }
         });
 
@@ -593,7 +485,7 @@
                         syncText.textContent = "Nube Activa";
                         connectToCloudData();
                     }).catch(() => {
-                        showToast("Error al conectar con Firebase.", "error");
+                        showToast("Error de conexión Firebase. Usando local.", "error");
                         fallbackToLocal();
                     });
                 } catch (e) {
@@ -625,178 +517,97 @@
                 soundsList = cloudSounds;
                 localStorage.setItem('sonitrack_local_v2', JSON.stringify(cloudSounds));
                 renderHistory();
-            }, (err) => {
-                showToast("Fallo al leer datos en la nube. Usando datos locales.", "error");
+            }, () => {
+                showToast("Error en sincronización en nube.", "error");
                 fallbackToLocal();
             });
         }
 
-        // NAVEGACIÓN ENTRE TABS/PÁGINAS
-        window.switchTab = function(tabName) {
-            document.getElementById('page-dashboard').classList.add('hidden');
-            document.getElementById('page-history').classList.add('hidden');
-            document.getElementById('page-analytics').classList.add('hidden');
-            document.getElementById('page-settings').classList.add('hidden');
+        // CARGAR DATOS DE PRUEBA / DEMOSTRACIÓN
+        btnLoadDemo.addEventListener('click', () => {
+            const demoLogs = [
+                { id: "demo-1", category: "Perro ladrando", intensity: "3", notes: "Ladrido incesante del perro del vecino a la madrugada.", timestamp: Date.now() - 3600000, audioBase64: "demo-dog" },
+                { id: "demo-2", category: "Golpe en la pared", intensity: "2", notes: "Pequeño golpe seco contra la medianera.", timestamp: Date.now() - 7200000, audioBase64: "demo-thud" },
+                { id: "demo-3", category: "Musica Fuerte", intensity: "3", notes: "Fiesta y música electrónica insoportable.", timestamp: Date.now() - 10800000, audioBase64: "demo-music" },
+                { id: "demo-4", category: "Otro sonido", intensity: "1", notes: "Zumbido extraño pero de baja intensidad.", timestamp: Date.now() - 14400000, audioBase64: "demo-chime" }
+            ];
 
-            document.getElementById(`page-${tabName}`).classList.remove('hidden');
-
-            // Actualizar diseño en botones Desktop
-            const desktopButtons = ['dashboard', 'history', 'analytics', 'settings'];
-            desktopButtons.forEach(btn => {
-                const el = document.getElementById(`btn-tab-${btn}`);
-                if (btn === tabName) {
-                    el.classList.add('active-tab');
-                } else {
-                    el.classList.remove('active-tab');
-                }
-            });
-
-            // Actualizar diseño en botones Mobile
-            desktopButtons.forEach(btn => {
-                const el = document.getElementById(`btn-mob-${btn}`);
-                if (btn === tabName) {
-                    el.classList.add('text-brand-500');
-                    el.classList.remove('text-slate-400');
-                } else {
-                    el.classList.add('text-slate-400');
-                    el.classList.remove('text-brand-500');
-                }
-            });
-
-            if (tabName === 'analytics') {
-                renderAnalytics();
-            }
-        };
-
-        // ANALÍTICAS DE EVENTOS
-        function renderAnalytics() {
-            const catsCont = document.getElementById('analytics-categories');
-            const intsCont = document.getElementById('analytics-intensities');
-            
-            if (soundsList.length === 0) {
-                catsCont.innerHTML = `<p class="text-xs text-slate-500 italic py-4">No hay datos suficientes para analizar. Registra ruidos o añade datos de demo en Ajustes.</p>`;
-                intsCont.innerHTML = `<p class="text-xs text-slate-500 italic py-4">No hay intensidades registradas aún.</p>`;
+            if (isUsingCloud && db) {
+                showToast("Para usar demos, desconéctate de la nube primero.", "error");
                 return;
             }
 
-            // Agrupar Categorías
-            const categoriesMap = {
-                "Perro ladrando": 0,
-                "Golpe en la pared": 0,
-                "Musica Fuerte": 0,
-                "Otro sonido": 0
-            };
-            soundsList.forEach(s => {
-                if (categoriesMap[s.category] !== undefined) {
-                    categoriesMap[s.category]++;
-                } else {
-                    categoriesMap["Otro sonido"]++;
-                }
-            });
-
-            // Agrupar Intensidades
-            const intensitiesMap = { "1": 0, "2": 0, "3": 0 };
-            soundsList.forEach(s => {
-                if (intensitiesMap[s.intensity] !== undefined) {
-                    intensitiesMap[s.intensity]++;
-                }
-            });
-
-            const maxCatValue = Math.max(...Object.values(categoriesMap), 1);
-            const maxIntValue = Math.max(...Object.values(intensitiesMap), 1);
-
-            // Render Categorías
-            catsCont.innerHTML = Object.entries(categoriesMap).map(([key, val]) => {
-                const percentage = Math.round((val / maxCatValue) * 100);
-                return `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[11px]">
-                            <span class="text-slate-300 font-medium">${key}</span>
-                            <span class="text-slate-400 font-mono">${val} veces</span>
-                        </div>
-                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                            <div class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Render Intensidades
-            const labelInt = { "1": "Baja", "2": "Media", "3": "Crítica" };
-            const colorsInt = { "1": "bg-brand-500", "2": "bg-blue-500", "3": "bg-red-500" };
-            intsCont.innerHTML = Object.entries(intensitiesMap).map(([key, val]) => {
-                const percentage = Math.round((val / maxIntValue) * 100);
-                return `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[11px]">
-                            <span class="text-slate-300 font-medium">${labelInt[key]}</span>
-                            <span class="text-slate-400 font-mono">${val} registros</span>
-                        </div>
-                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                            <div class="${colorsInt[key]} h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // COMPORTAMIENTO CARGAR DATOS DEMO
-        btnLoadDemos.addEventListener('click', () => {
-            const demoLogs = [
-                {
-                    id: crypto.randomUUID(),
-                    category: "Perro ladrando",
-                    intensity: "3",
-                    notes: "El perro del vecino del 4B ladrando persistentemente de madrugada.",
-                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
-                    timestamp: Date.now() - 3600000 * 2 // hace 2 horas
-                },
-                {
-                    id: crypto.randomUUID(),
-                    category: "Golpe en la pared",
-                    intensity: "2",
-                    notes: "Golpe seco e intermitente sobre la pared divisoria del comedor.",
-                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
-                    timestamp: Date.now() - 3600000 * 5 // hace 5 horas
-                },
-                {
-                    id: crypto.randomUUID(),
-                    category: "Musica Fuerte",
-                    intensity: "3",
-                    notes: "Música electrónica con graves intensos que retumban en el suelo.",
-                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
-                    timestamp: Date.now() - 86400000 // ayer
-                },
-                {
-                    id: crypto.randomUUID(),
-                    category: "Otro sonido",
-                    intensity: "1",
-                    notes: "Ruido sordo de taladro por reparaciones fuera del horario permitido.",
-                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
-                    timestamp: Date.now() - 86400000 * 2
-                }
-            ];
-
             soundsList = [...demoLogs, ...soundsList];
             localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
-            showToast("Se cargaron 4 registros reales de demostración.");
-            renderHistory();
+            showToast("Datos de demostración cargados.");
             switchTab('history');
         });
 
-        // GESTOR PURGA TOTAL
-        btnPurgeLocal.addEventListener('click', () => {
-            if (confirm("¿Estás absolutamente seguro de vaciar todo el historial del teléfono?")) {
-                soundsList = [];
-                localStorage.setItem('sonitrack_local_v2', JSON.stringify([]));
-                showToast("Historial local vaciado.");
-                renderHistory();
-                switchTab('dashboard');
+        // REPRODUCTOR SINTÉTICO (Evita audios pesados y funciona nativo en iOS)
+        function playSyntheticSound(type) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (type === "demo-dog") {
+                    // Simular Ladrido de perro
+                    let osc = ctx.createOscillator();
+                    let gain = ctx.createGain();
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(120, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === "demo-thud") {
+                    // Simular Golpe seco
+                    let osc = ctx.createOscillator();
+                    let gain = ctx.createGain();
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(80, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.8, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.1);
+                } else if (type === "demo-music") {
+                    // Simular música rítmica rápida
+                    for (let i = 0; i < 4; i++) {
+                        let t = ctx.currentTime + (i * 0.25);
+                        let osc = ctx.createOscillator();
+                        let gain = ctx.createGain();
+                        osc.frequency.setValueAtTime(50, t);
+                        gain.gain.setValueAtTime(0.6, t);
+                        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(t);
+                        osc.stop(t + 0.15);
+                    }
+                } else {
+                    // Sonido genérico
+                    let osc = ctx.createOscillator();
+                    let gain = ctx.createGain();
+                    osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                }
+            } catch (e) {
+                console.error("AudioContext bloqueado o deshabilitado.", e);
             }
-        });
+        }
 
-        // RENDER DE TARJETAS DE AUDIO
+        // RENDEREADO DE HISTORIAL Y ANALÍTICAS
         function renderHistory() {
+            // Métricas básicas
             const total = soundsList.length;
             const startOfToday = new Date();
             startOfToday.setHours(0,0,0,0);
@@ -807,14 +618,38 @@
             statToday.textContent = todayCount;
             statCritical.textContent = criticalCount;
 
+            // Render de gráfico SVG
+            const countLow = soundsList.filter(s => parseInt(s.intensity) === 1).length;
+            const countMed = soundsList.filter(s => parseInt(s.intensity) === 2).length;
+            const countHigh = soundsList.filter(s => parseInt(s.intensity) === 3).length;
+            const maxVal = Math.max(countLow, countMed, countHigh, 1);
+
+            analyticsBars.innerHTML = `
+                <div class="flex flex-col items-center w-12 space-y-1">
+                    <span class="text-[9px] font-bold text-slate-400">${countLow}</span>
+                    <div class="bg-brand-500 w-6 rounded-t-lg transition-all" style="height: ${(countLow/maxVal)*80}px; min-height: 4px;"></div>
+                    <span class="text-[8px] text-slate-500">Baja</span>
+                </div>
+                <div class="flex flex-col items-center w-12 space-y-1">
+                    <span class="text-[9px] font-bold text-slate-400">${countMed}</span>
+                    <div class="bg-blue-500 w-6 rounded-t-lg transition-all" style="height: ${(countMed/maxVal)*80}px; min-height: 4px;"></div>
+                    <span class="text-[8px] text-slate-500">Media</span>
+                </div>
+                <div class="flex flex-col items-center w-12 space-y-1">
+                    <span class="text-[9px] font-bold text-slate-400">${countHigh}</span>
+                    <div class="bg-red-500 w-6 rounded-t-lg transition-all" style="height: ${(countHigh/maxVal)*80}px; min-height: 4px;"></div>
+                    <span class="text-[8px] text-slate-500">Crítica</span>
+                </div>
+            `;
+
+            // Renderizado de listado de historial
             const filterValue = filterCategory.value;
             const filtered = filterValue === 'all' ? soundsList : soundsList.filter(s => s.category === filterValue);
 
             if (filtered.length === 0) {
                 soundList.innerHTML = `
-                    <div class="text-center py-10 text-slate-500 bg-slate-900/40 rounded-2xl border border-slate-800 border-dashed">
-                        <p class="text-xs">No hay registros acústicos aquí aún.</p>
-                        <p class="text-[10px] text-slate-600 mt-1">Navega a la pestaña de Ajustes ⚙️ para cargar datos simulados.</p>
+                    <div class="text-center py-12 text-slate-500">
+                        <p class="text-xs">No hay ruidos registrados.</p>
                     </div>
                 `;
                 return;
@@ -830,53 +665,52 @@
                 const isPlaying = currentAudioPlayingId === s.id;
 
                 return `
-                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                        <div class="flex items-start gap-3">
-                            <button onclick="playLocalAudio('${s.id}', '${s.audioBase64}', '${s.category}', '${s.intensity}')" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'bg-brand-500 text-slate-950 animate-pulse' : 'bg-slate-800 text-brand-400'}">
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between gap-3">
+                        <div class="flex items-start gap-2.5">
+                            <button onclick="playLocalAudio('${s.id}', '${s.audioBase64}')" class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${isPlaying ? 'bg-brand-500 text-slate-950 animate-pulse' : 'bg-slate-800 text-brand-400'}">
                                 ${isPlaying ? `
                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                                 ` : `
                                     <svg class="h-4 w-4 ml-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
                                 `}
                             </button>
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-white">${s.category}</span>
-                                    <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${intensityClass}">${intensityLabel}</span>
+                            <div class="space-y-1 flex-grow">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[11px] font-bold text-white">${s.category}</span>
+                                    <span class="text-[8px] px-1.5 py-0.2 rounded-full font-semibold ${intensityClass}">${intensityLabel}</span>
                                 </div>
-                                <p class="text-[11px] text-slate-400 max-w-sm">${s.notes || '<span class="text-slate-600 italic">Sin notas</span>'}</p>
-                                <div class="text-[9px] text-slate-500 font-mono">${date} a las ${time}</div>
+                                <p class="text-[10px] text-slate-400 leading-normal">${s.notes || '<span class="text-slate-600 italic">Sin notas</span>'}</p>
+                                <div class="text-[8px] text-slate-500 font-mono">${date} a las ${time}</div>
                             </div>
+                            <button onclick="requestDeleteLog('${s.id}')" class="text-slate-600 hover:text-red-400 p-1">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
                         </div>
-                        <button onclick="requestDeleteLog('${s.id}')" class="text-slate-500 hover:text-red-400 self-end md:self-center p-1.5">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
                     </div>
                 `;
             }).join('');
         }
 
-        // REPRODUCCIÓN INTEGRADA DE AUDIO
-        window.playLocalAudio = function(id, base64, category, intensity) {
+        // REPRODUCCIÓN AUDIO LOCAL / DEMO
+        window.playLocalAudio = function(id, base64) {
             unlockAudioForSafari();
+            if (base64.startsWith("demo-")) {
+                playSyntheticSound(base64);
+                return;
+            }
+
             if (currentAudioPlayingId === id) {
                 globalPlayer.pause();
                 currentAudioPlayingId = null;
                 renderHistory();
             } else {
                 currentAudioPlayingId = id;
-                synthesizeSoundEffect(category, intensity);
-                
                 globalPlayer.src = base64;
                 globalPlayer.play().then(() => {
                     renderHistory();
                 }).catch(() => {
-                    // Si el audio falla o está simulado, mantenemos el estado visual activo de reproducción
+                    currentAudioPlayingId = null;
                     renderHistory();
-                    setTimeout(() => {
-                        currentAudioPlayingId = null;
-                        renderHistory();
-                    }, 1500);
                 });
             }
         };
@@ -886,7 +720,7 @@
             renderHistory();
         };
 
-        // GESTIÓN DE BORRADO DESDE MODAL CUSTOM EN IPHONE
+        // BORRADO DE REGISTROS DE FORMA SEGURA
         window.requestDeleteLog = function(id) {
             deleteIdCallback = id;
             confirmModal.classList.remove('hidden');
@@ -905,14 +739,14 @@
                 try {
                     const docRef = doc(db, 'artifacts', 'sonitrack-permanent-storage', 'public', 'data', 'sound_logs', id);
                     await deleteDoc(docRef);
-                    showToast("Registro eliminado de la nube.");
+                    showToast("Borrado de la nube.");
                 } catch (e) {
-                    showToast("No se pudo eliminar en la nube.", "error");
+                    showToast("Fallo al eliminar en nube.", "error");
                 }
             } else {
                 soundsList = soundsList.filter(s => s.id !== id);
                 localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
-                showToast("Registro borrado localmente.");
+                showToast("Borrado localmente.");
                 renderHistory();
             }
 
@@ -920,7 +754,7 @@
             deleteIdCallback = null;
         });
 
-        // CONTROLADOR DE GRABACIÓN
+        // GESTOR DE GRABACIÓN DE AUDIO FISICO
         btnRecord.addEventListener('click', () => {
             unlockAudioForSafari();
             if (isRecording) {
@@ -933,13 +767,6 @@
         async function startRecording() {
             audioChunks = [];
             noSignalText.style.display = 'none';
-
-            // Comprobación de existencia de navigator.mediaDevices
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                document.getElementById('mic-security-warning').classList.remove('hidden');
-                simulateRecording();
-                return;
-            }
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -974,7 +801,7 @@
                         currentRecordedBase64 = reader.result;
                         btnSave.disabled = false;
                         btnSave.className = "w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20";
-                        showToast("Grabación física completada correctamente.");
+                        showToast("Audio grabado listo.");
                     };
                     stream.getTracks().forEach(track => track.stop());
                 };
@@ -985,7 +812,7 @@
                 recordRing.classList.remove('opacity-0');
                 recordRing.classList.add('animate-ping', 'opacity-100');
                 recordIcon.className = "w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg";
-                recordStatus.textContent = "Grabando ruido físico...";
+                recordStatus.textContent = "Grabando ruido...";
                 recordStatus.className = "text-xs font-semibold text-red-500 animate-pulse";
 
                 secondsElapsed = 0;
@@ -1001,70 +828,13 @@
                 drawWave();
 
             } catch (err) {
-                document.getElementById('mic-security-warning').classList.remove('hidden');
-                simulateRecording();
+                showToast("Permite usar el micrófono en tu iPhone.", "error");
             }
-        }
-
-        // Grabación de respaldo si el micrófono no está permitido (Ej: Safari sin HTTPS en red local)
-        function simulateRecording() {
-            isRecording = true;
-            recordRing.classList.remove('opacity-0');
-            recordRing.classList.add('animate-ping', 'opacity-100');
-            recordIcon.className = "w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg";
-            recordStatus.textContent = "Simulando captura de ondas...";
-            recordStatus.className = "text-xs font-semibold text-amber-400 animate-pulse";
-
-            secondsElapsed = 0;
-            recordTimer.textContent = "00:00";
-            
-            recordInterval = setInterval(() => {
-                secondsElapsed++;
-                const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-                const seconds = String(secondsElapsed % 60).padStart(2, '0');
-                recordTimer.textContent = `${minutes}:${seconds}`;
-                if (secondsElapsed >= 5) stopRecording(); // Simular 5 segundos para demo rápida
-            }, 1000);
-
-            // Simulación visual en Canvas
-            let simulatedCount = 0;
-            function drawSimulatedWave() {
-                if (!isRecording) return;
-                animationId = requestAnimationFrame(drawSimulatedWave);
-                canvasCtx.fillStyle = '#020617';
-                canvasCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
-
-                canvasCtx.lineWidth = 2;
-                canvasCtx.strokeStyle = '#22c55e';
-                canvasCtx.beginPath();
-
-                const sliceWidth = waveCanvas.width / 50;
-                let x = 0;
-
-                for (let i = 0; i < 50; i++) {
-                    const amplitude = Math.sin(i * 0.5 + simulatedCount) * (waveCanvas.height / 3);
-                    const y = (waveCanvas.height / 2) + amplitude;
-                    if (i === 0) canvasCtx.moveTo(x, y);
-                    else canvasCtx.lineTo(x, y);
-                    x += sliceWidth;
-                }
-                canvasCtx.stroke();
-                simulatedCount += 0.25;
-            }
-            drawSimulatedWave();
         }
 
         function stopRecording() {
             if (!isRecording) return;
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            } else {
-                // detener simulación
-                currentRecordedBase64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
-                btnSave.disabled = false;
-                btnSave.className = "w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20";
-                showToast("Simulación completada con éxito.");
-            }
+            mediaRecorder.stop();
             isRecording = false;
 
             clearInterval(recordInterval);
@@ -1073,7 +843,7 @@
             recordRing.classList.add('opacity-0');
             recordRing.classList.remove('animate-ping', 'opacity-100');
             recordIcon.className = "w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg";
-            recordStatus.textContent = "Listo para capturar";
+            recordStatus.textContent = "Grabación terminada";
             recordStatus.className = "text-xs font-semibold text-brand-400";
 
             canvasCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
@@ -1101,7 +871,7 @@
             }
         }
 
-        // GUARDADO DE REGISTROS
+        // GUARDADO DE REGISTRO EN FORMULARIO
         soundForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentRecordedBase64) return;
@@ -1122,14 +892,14 @@
                 try {
                     const colRef = collection(db, 'artifacts', 'sonitrack-permanent-storage', 'public', 'data', 'sound_logs');
                     await addDoc(colRef, newLog);
-                    showToast("Sincronizado con la nube de forma segura.");
+                    showToast("Guardado en la nube.");
                 } catch (e) {
-                    showToast("No se pudo enviar a la nube. Guardando localmente.", "error");
+                    showToast("Error en la nube, se guardó local.", "error");
                     saveLocalAndRender(newLog);
                 }
             } else {
                 saveLocalAndRender(newLog);
-                showToast("Guardado en tu iPhone localmente.");
+                showToast("Guardado en tu iPhone.");
             }
 
             // RESET DEL FORMULARIO
@@ -1139,12 +909,11 @@
             recordStatus.textContent = "Listo para capturar";
             recordStatus.className = "text-xs font-semibold text-slate-300";
             btnSave.disabled = true;
-            btnSave.className = "w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs";
+            btnSave.className = "w-full bg-slate-800 text-slate-500 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs";
             btnSave.innerHTML = `
                 <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span>Guardar Registro</span>
             `;
-            switchTab('history');
         });
 
         function saveLocalAndRender(log) {
@@ -1153,17 +922,17 @@
             renderHistory();
         }
 
-        // GUARDADO DE AJUSTES FIREBASE
+        // GUARDAR AJUSTES DE BASE DE DATOS
         btnSaveSettings.addEventListener('click', () => {
             const raw = firebaseConfigInput.value.trim();
             if (!raw) {
-                showToast("Por favor pega un JSON válido.", "error");
+                showToast("Ingresa un JSON válido.", "error");
                 return;
             }
             try {
                 JSON.parse(raw);
                 localStorage.setItem('sonitrack_firebase_cfg', raw);
-                showToast("Configuración guardada. Conectando...");
+                showToast("Conectando con Firebase...");
                 initAppDatabase();
             } catch (e) {
                 showToast("Formato JSON incorrecto.", "error");
@@ -1177,10 +946,10 @@
             initAppDatabase();
         });
 
-        // EXPORTACIÓN EXCEL CSV
+        // EXPORTACIÓN A EXCEL / CSV
         btnExportCsv.addEventListener('click', () => {
             if (soundsList.length === 0) {
-                showToast("No tienes ruidos para exportar.", "info");
+                showToast("No hay registros para exportar.", "error");
                 return;
             }
             let csv = "data:text/csv;charset=utf-8,Fecha,Hora,Categoria,Intensidad,Notas\n";
@@ -1207,12 +976,8 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // INICIAR EN GRABADORA POR DEFECTO
-        switchTab('dashboard');
-
-        // ARRANCAR BASE DE DATOS E HISTORIAL
+        // ARRANCAR BASE DE DATOS Y RENDERIZAR
         initAppDatabase();
-
     </script>
 </body>
 </html>
