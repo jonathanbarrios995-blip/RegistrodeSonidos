@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>SoniTrack</title>
+    
+    <!-- Metaetiquetas para comportarse como App Nativa en iPhone (PWA) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoniTrack">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%2316a34a'><circle cx='50' cy='50' r='50'/><path d='M35 50h30M50 35v30' stroke='white' stroke-width='8' stroke-linecap='round'/></svg>">
+
+    <!-- Tailwind CSS para el diseño visual premium -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Previene el scroll por rebote molesto en iOS */
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020617;
+        }
+        .scrollable-content {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="text-slate-100 font-sans flex flex-col h-full w-full">
+
+    <!-- REPRODUCTOR GLOBAL PARA SAFARI EN IPHONE -->
+    <audio id="global-audio-player" playsinline style="display:none;"></audio>
+
+    <!-- HEADER DE LA APP -->
+    <header class="w-full glass border-b border-slate-800 px-4 py-3 shrink-0 z-40">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 text-slate-950 p-2 rounded-xl shadow-lg shadow-brand-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">SoniTrack</h1>
+                    <p class="text-[10px] text-slate-400">Control de Sonidos Permanente</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <!-- Botón de ajustes de base de datos -->
+                <button id="btn-settings" class="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700 transition-all text-slate-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+                <!-- Badge de Estado del almacenamiento -->
+                <div id="sync-badge" class="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-full text-[10px]">
+                    <span id="sync-indicator" class="h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span id="sync-text" class="text-slate-400 font-semibold uppercase">Modo Local</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER DE UNIÓN/DESBLOQUEO EN IOS SAFARI -->
+    <div id="ios-unblock-banner" class="bg-brand-900/30 border-b border-brand-500/20 text-brand-200 text-[11px] px-4 py-2 text-center shrink-0">
+        📢 <span class="font-bold">Usuario de iPhone:</span> Toca la pantalla una vez para habilitar el audio de tus grabaciones.
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL SCROLLEABLE -->
+    <div class="flex-grow scrollable-content p-4">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-24">
+
+            <!-- PANEL IZQUIERDO: FORMULARIO Y GRABADOR -->
+            <section class="lg:col-span-5 space-y-6">
+                
+                <div class="glass rounded-3xl p-5 shadow-2xl space-y-5 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                            Registrar Ruido
+                        </h2>
+                        <span class="text-[10px] text-brand-500 font-bold uppercase tracking-wider bg-brand-500/10 px-2.5 py-1 rounded-full">Grabador</span>
+                    </div>
+
+                    <!-- BOTÓN DE GRABADO -->
+                    <div class="flex flex-col items-center justify-center space-y-3 py-2">
+                        <button id="btn-record" class="group relative w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center focus:outline-none transition-all duration-300 hover:border-brand-500 hover:scale-105 active:scale-95 shadow-xl">
+                            <span id="record-ring" class="absolute inset-0 rounded-full border-4 border-red-500 opacity-0 transition-all duration-300"></span>
+                            <div id="record-icon" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                            </div>
+                        </button>
+
+                        <div class="text-center">
+                            <p id="record-status" class="text-xs font-semibold text-slate-300">Presiona para grabar</p>
+                            <p id="record-timer" class="text-[10px] text-slate-500 font-mono mt-0.5">00:00</p>
+                        </div>
+
+                        <!-- VISUALIZADOR DE ONDAS -->
+                        <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-2 h-16 overflow-hidden relative">
+                            <canvas id="wave-canvas" class="w-full h-full block"></canvas>
+                            <div id="no-signal-text" class="absolute inset-0 flex items-center justify-center text-[10px] text-slate-600 font-medium">Micrófono apagado</div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO DE CATEGORÍAS -->
+                    <form id="sound-form" class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría</label>
+                            <select id="sound-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" required>
+                                <option value="Perro ladrando">🐶 Perro ladrando</option>
+                                <option value="Golpe en la pared">🧱 Golpe en la pared</option>
+                                <option value="Musica Fuerte">🔊 Musica Fuerte</option>
+                                <option value="Otro sonido">✨ Otro sonido</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Intensidad</label>
+                                <span id="intensity-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">Media</span>
+                            </div>
+                            <input type="range" id="sound-intensity" min="1" max="3" value="2" class="w-full accent-brand-500 bg-slate-800 h-1 rounded-lg">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notas / Detalles</label>
+                            <textarea id="sound-notes" rows="2" placeholder="Describe brevemente el ruido..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" id="btn-save" disabled class="w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            <span>Guardar Registro</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- PANEL DERECHO: HISTORIAL -->
+            <section class="lg:col-span-7 space-y-4">
+                
+                <!-- METRICAS DE HOY -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Historial Total</span>
+                        <span id="stat-total" class="text-xl font-black text-white mt-1">0</span>
+                    </div>
+                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Registros Hoy</span>
+                        <span id="stat-today" class="text-xl font-black text-brand-400 mt-1">0</span>
+                    </div>
+                    <div class="glass rounded-2xl p-3 flex flex-col justify-between">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Nivel Crítico</span>
+                        <span id="stat-critical" class="text-xl font-black text-red-500 mt-1">0</span>
+                    </div>
+                </div>
+
+                <!-- CONTENEDOR DE LA LISTA -->
+                <div class="glass rounded-3xl p-5 shadow-2xl flex flex-col">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Historial de Ruidos</h2>
+                            <p class="text-[10px] text-slate-500">Registros almacenados permanentemente en tu iPhone</p>
+                        </div>
+
+                        <!-- Filtros e Importar/Exportar -->
+                        <div class="flex items-center gap-2">
+                            <select id="filter-category" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
+                                <option value="all">Ver todos</option>
+                                <option value="Perro ladrando">🐶 Perros</option>
+                                <option value="Golpe en la pared">🧱 Golpes</option>
+                                <option value="Musica Fuerte">🔊 Música</option>
+                                <option value="Otro sonido">✨ Otros</option>
+                            </select>
+                            <button id="btn-export-csv" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 flex items-center gap-1 transition-all">
+                                <span>CSV</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de registros -->
+                    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-1" id="sound-list">
+                        <!-- El listado se carga vía JS -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- MODAL DE AJUSTES DE BASE DE DATOS -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+        <div class="glass w-full max-w-md rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white">Sincronización en la Nube (Opcional)</h3>
+                <button id="close-settings" class="text-slate-500 hover:text-white">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Por defecto, SoniTrack guarda tus datos de forma segura e indefinida en este iPhone. Si quieres sincronizarlos en tiempo real con otros dispositivos, puedes habilitar Firebase:
+            </p>
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Configuración JSON de Firebase</label>
+                <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", ...}' class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-[10px] font-mono text-white focus:outline-none focus:border-brand-500 resize-none"></textarea>
+            </div>
+            <div class="flex space-x-2">
+                <button id="btn-save-settings" class="flex-grow bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 rounded-xl text-xs">Guardar y Conectar</button>
+                <button id="btn-clear-settings" class="bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold py-2 px-3 rounded-xl text-xs">Borrar Nube</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN INTEGRADO (Para evitar bloqueos en iPhone) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+        <div class="glass w-full max-w-xs rounded-2xl p-5 space-y-4 text-center">
+            <h4 class="text-sm font-bold text-white">¿Confirmas la eliminación?</h4>
+            <p class="text-xs text-slate-400">Esta acción no se puede deshacer y borrará el registro para siempre.</p>
+            <div class="flex space-x-2">
+                <button id="btn-confirm-yes" class="flex-grow bg-red-500 hover:bg-red-600 text-white font-bold py-2 rounded-xl text-xs">Eliminar</button>
+                <button id="btn-confirm-no" class="flex-grow bg-slate-800 text-slate-300 font-bold py-2 rounded-xl text-xs">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES TOAST -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4"></div>
+
+    <!-- CARGA DE SCRIPTS SEGUROS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // CONFIGURACIÓN LOCAL (SISTEMA DE RESPALDO INTEGRADO)
+        let soundsList = JSON.parse(localStorage.getItem('sonitrack_local_v2')) || [];
+        let firebaseApp = null;
+        let db = null;
+        let auth = null;
+        let isUsingCloud = false;
+        let deleteIdCallback = null;
+
+        // ELEMENTOS DEL DOM
+        const btnRecord = document.getElementById('btn-record');
+        const recordRing = document.getElementById('record-ring');
+        const recordIcon = document.getElementById('record-icon');
+        const recordStatus = document.getElementById('record-status');
+        const recordTimer = document.getElementById('record-timer');
+        const waveCanvas = document.getElementById('wave-canvas');
+        const noSignalText = document.getElementById('no-signal-text');
+        const soundForm = document.getElementById('sound-form');
+        const soundCategory = document.getElementById('sound-category');
+        const soundIntensity = document.getElementById('sound-intensity');
+        const intensityBadge = document.getElementById('intensity-badge');
+        const soundNotes = document.getElementById('sound-notes');
+        const btnSave = document.getElementById('btn-save');
+        const soundList = document.getElementById('sound-list');
+        const filterCategory = document.getElementById('filter-category');
+        const btnExportCsv = document.getElementById('btn-export-csv');
+
+        // Métricas
+        const statTotal = document.getElementById('stat-total');
+        const statToday = document.getElementById('stat-today');
+        const statCritical = document.getElementById('stat-critical');
+
+        // Ajustes y Estado de conexión
+        const btnSettings = document.getElementById('btn-settings');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        const firebaseConfigInput = document.getElementById('firebase-config-input');
+        const btnSaveSettings = document.getElementById('btn-save-settings');
+        const btnClearSettings = document.getElementById('btn-clear-settings');
+        
+        const syncIndicator = document.getElementById('sync-indicator');
+        const syncText = document.getElementById('sync-text');
+
+        // Modales y Toasts
+        const confirmModal = document.getElementById('confirm-modal');
+        const btnConfirmYes = document.getElementById('btn-confirm-yes');
+        const btnConfirmNo = document.getElementById('btn-confirm-no');
+        const globalPlayer = document.getElementById('global-audio-player');
+
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordInterval = null;
+        let secondsElapsed = 0;
+        let currentRecordedBase64 = null;
+        let currentAudioPlayingId = null;
+        let audioUnlocked = false;
+
+        const canvasCtx = waveCanvas.getContext('2d');
+        let audioCtx = null;
+        let analyser = null;
+        let dataArray = null;
+        let animationId = null;
+
+        // ACTIVAR AUDIO EN IPHONE (Safari requiere un clic sincrónico)
+        function unlockAudioForSafari() {
+            if (audioUnlocked) return;
+            globalPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+            globalPlayer.play().then(() => {
+                audioUnlocked = true;
+                const banner = document.getElementById('ios-unblock-banner');
+                if (banner) banner.remove();
+            }).catch(() => {});
+        }
+        document.addEventListener('click', unlockAudioForSafari, { once: false });
+
+        // TOASTS PERSONALIZADOS (Previene errores de alert)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'p-3 rounded-xl border text-xs shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto';
+            if (type === 'success') toast.className += ' bg-slate-900 border-brand-500/20 text-brand-400';
+            else if (type === 'error') toast.className += ' bg-slate-900 border-red-500/20 text-red-400';
+            else toast.className += ' bg-slate-900 border-blue-500/20 text-blue-400';
+
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // CONTROL INTENSIDAD RUIDO
+        soundIntensity.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (val === 1) {
+                intensityBadge.textContent = "Baja";
+                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-brand-500/10 text-brand-400";
+            } else if (val === 2) {
+                intensityBadge.textContent = "Media";
+                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400";
+            } else {
+                intensityBadge.textContent = "Crítica";
+                intensityBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400";
+            }
+        });
+
+        // INICIALIZACIÓN DE LA BASE DE DATOS E INSTALACIÓN
+        function initAppDatabase() {
+            const savedConfig = localStorage.getItem('sonitrack_firebase_cfg');
+            if (savedConfig) {
+                try {
+                    const parsed = JSON.parse(savedConfig);
+                    firebaseApp = initializeApp(parsed);
+                    auth = getAuth(firebaseApp);
+                    db = getFirestore(firebaseApp);
+                    
+                    firebaseConfigInput.value = savedConfig;
+                    isUsingCloud = true;
+
+                    signInAnonymously(auth).then(() => {
+                        syncIndicator.className = "h-2 w-2 rounded-full bg-brand-500";
+                        syncText.textContent = "Nube Activa";
+                        connectToCloudData();
+                    }).catch(() => {
+                        showToast("Error de conexión con tu base de datos Firebase.", "error");
+                        fallbackToLocal();
+                    });
+                } catch (e) {
+                    fallbackToLocal();
+                }
+            } else {
+                fallbackToLocal();
+            }
+        }
+
+        function fallbackToLocal() {
+            isUsingCloud = false;
+            syncIndicator.className = "h-2 w-2 rounded-full bg-blue-500";
+            syncText.textContent = "Modo Local";
+            renderHistory();
+        }
+
+        function connectToCloudData() {
+            if (!isUsingCloud || !db) return;
+            const appId = 'sonitrack-permanent-storage';
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'sound_logs');
+            
+            // Suscripción segura de FireStore
+            onSnapshot(colRef, (snapshot) => {
+                const cloudSounds = [];
+                snapshot.forEach(doc => {
+                    cloudSounds.push({ id: doc.id, ...doc.data() });
+                });
+                cloudSounds.sort((a, b) => b.timestamp - a.timestamp);
+                soundsList = cloudSounds;
+                // Respaldar siempre una copia local de seguridad en el teléfono
+                localStorage.setItem('sonitrack_local_v2', JSON.stringify(cloudSounds));
+                renderHistory();
+            }, (err) => {
+                showToast("Fallo al leer datos de la nube. Usando copia de seguridad local.", "error");
+                fallbackToLocal();
+            });
+        }
+
+        // RENDER DE TARJETAS DE AUDIO
+        function renderHistory() {
+            const total = soundsList.length;
+            const startOfToday = new Date();
+            startOfToday.setHours(0,0,0,0);
+            const todayCount = soundsList.filter(s => s.timestamp >= startOfToday.getTime()).length;
+            const criticalCount = soundsList.filter(s => parseInt(s.intensity) === 3).length;
+
+            statTotal.textContent = total;
+            statToday.textContent = todayCount;
+            statCritical.textContent = criticalCount;
+
+            const filterValue = filterCategory.value;
+            const filtered = filterValue === 'all' ? soundsList : soundsList.filter(s => s.category === filterValue);
+
+            if (filtered.length === 0) {
+                soundList.innerHTML = `
+                    <div class="text-center py-10 text-slate-500">
+                        <p class="text-xs">No hay ruidos registrados aún.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            soundList.innerHTML = filtered.map(s => {
+                const date = new Date(s.timestamp).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                const time = new Date(s.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                
+                let intensityLabel = s.intensity === '1' ? 'Baja' : s.intensity === '2' ? 'Media' : 'Crítica';
+                let intensityClass = s.intensity === '1' ? 'bg-brand-500/10 text-brand-400' : s.intensity === '2' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400';
+
+                const isPlaying = currentAudioPlayingId === s.id;
+
+                return `
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <button onclick="playLocalAudio('${s.id}', '${s.audioBase64}')" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'bg-brand-500 text-slate-950 animate-pulse' : 'bg-slate-800 text-brand-400'}">
+                                ${isPlaying ? `
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                ` : `
+                                    <svg class="h-4 w-4 ml-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+                                `}
+                            </button>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-white">${s.category}</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${intensityClass}">${intensityLabel}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 max-w-sm">${s.notes || '<span class="text-slate-600 italic">Sin notas</span>'}</p>
+                                <div class="text-[9px] text-slate-500 font-mono">${date} a las ${time}</div>
+                            </div>
+                        </div>
+                        <button onclick="requestDeleteLog('${s.id}')" class="text-slate-500 hover:text-red-400 self-end md:self-center p-1.5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // REPRODUCCIÓN INTEGRADA DE AUDIO
+        window.playLocalAudio = function(id, base64) {
+            unlockAudioForSafari();
+            if (currentAudioPlayingId === id) {
+                globalPlayer.pause();
+                currentAudioPlayingId = null;
+                renderHistory();
+            } else {
+                currentAudioPlayingId = id;
+                globalPlayer.src = base64;
+                globalPlayer.play().then(() => {
+                    renderHistory();
+                }).catch(() => {
+                    currentAudioPlayingId = null;
+                    renderHistory();
+                });
+            }
+        };
+
+        globalPlayer.onended = () => {
+            currentAudioPlayingId = null;
+            renderHistory();
+        };
+
+        // GESTIÓN DE BORRADO DESDE MODAL CUSTOM EN IPHONE
+        window.requestDeleteLog = function(id) {
+            deleteIdCallback = id;
+            confirmModal.classList.remove('hidden');
+        };
+
+        btnConfirmNo.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            deleteIdCallback = null;
+        });
+
+        btnConfirmYes.addEventListener('click', async () => {
+            if (!deleteIdCallback) return;
+            const id = deleteIdCallback;
+
+            if (isUsingCloud && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', 'sonitrack-permanent-storage', 'public', 'data', 'sound_logs', id);
+                    await deleteDoc(docRef);
+                    showToast("Registro eliminado de la nube.");
+                } catch (e) {
+                    showToast("No se pudo eliminar en la nube.", "error");
+                }
+            } else {
+                soundsList = soundsList.filter(s => s.id !== id);
+                localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
+                showToast("Registro borrado localmente.");
+                renderHistory();
+            }
+
+            confirmModal.classList.add('hidden');
+            deleteIdCallback = null;
+        });
+
+        // CONTROLADOR DE GRABACIÓN
+        btnRecord.addEventListener('click', () => {
+            unlockAudioForSafari();
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        async function startRecording() {
+            audioChunks = [];
+            noSignalText.style.display = 'none';
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioCtx.createMediaStreamSource(stream);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+
+                let mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                    if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+                    else if (MediaRecorder.isTypeSupported('audio/aac')) mimeType = 'audio/aac';
+                    else mimeType = '';
+                }
+
+                const options = mimeType ? { mimeType } : {};
+                mediaRecorder = new MediaRecorder(stream, options);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/mp4' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        currentRecordedBase64 = reader.result;
+                        btnSave.disabled = false;
+                        btnSave.className = "w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20";
+                        showToast("Grabación lista para guardar.");
+                    };
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                recordRing.classList.remove('opacity-0');
+                recordRing.classList.add('animate-ping', 'opacity-100');
+                recordIcon.className = "w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg";
+                recordStatus.textContent = "Grabando ruido...";
+                recordStatus.className = "text-xs font-semibold text-red-500 animate-pulse";
+
+                secondsElapsed = 0;
+                recordTimer.textContent = "00:00";
+                recordInterval = setInterval(() => {
+                    secondsElapsed++;
+                    const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                    const seconds = String(secondsElapsed % 60).padStart(2, '0');
+                    recordTimer.textContent = `${minutes}:${seconds}`;
+                    if (secondsElapsed >= 60) stopRecording();
+                }, 1000);
+
+                drawWave();
+
+            } catch (err) {
+                showToast("Por favor otorga permisos al micrófono.", "error");
+            }
+        }
+
+        function stopRecording() {
+            if (!isRecording) return;
+            mediaRecorder.stop();
+            isRecording = false;
+
+            clearInterval(recordInterval);
+            if (animationId) cancelAnimationFrame(animationId);
+
+            recordRing.classList.add('opacity-0');
+            recordRing.classList.remove('animate-ping', 'opacity-100');
+            recordIcon.className = "w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg";
+            recordStatus.textContent = "Grabación de ruido terminada";
+            recordStatus.className = "text-xs font-semibold text-brand-400";
+
+            canvasCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+            noSignalText.style.display = 'flex';
+        }
+
+        function drawWave() {
+            if (!isRecording) return;
+            animationId = requestAnimationFrame(drawWave);
+            analyser.getByteFrequencyData(dataArray);
+
+            canvasCtx.fillStyle = '#020617';
+            canvasCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+
+            const barWidth = (waveCanvas.width / analyser.frequencyBinCount) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < analyser.frequencyBinCount; i++) {
+                barHeight = dataArray[i] / 1.5;
+                canvasCtx.fillStyle = `rgb(${barHeight + 34}, ${220 - barHeight}, 94)`;
+                const yPos = (waveCanvas.height / 2) - (barHeight / 2);
+                canvasCtx.fillRect(x, yPos, barWidth - 1, barHeight);
+                x += barWidth;
+            }
+        }
+
+        // GUARDADO DE REGISTROS
+        soundForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentRecordedBase64) return;
+
+            btnSave.disabled = true;
+            btnSave.textContent = "Guardando...";
+
+            const newLog = {
+                id: crypto.randomUUID(),
+                category: soundCategory.value,
+                intensity: soundIntensity.value,
+                notes: soundNotes.value.trim(),
+                audioBase64: currentRecordedBase64,
+                timestamp: Date.now()
+            };
+
+            if (isUsingCloud && db) {
+                try {
+                    const colRef = collection(db, 'artifacts', 'sonitrack-permanent-storage', 'public', 'data', 'sound_logs');
+                    await addDoc(colRef, newLog);
+                    showToast("Sincronizado con la nube.");
+                } catch (e) {
+                    showToast("No se pudo enviar a la nube. Guardando localmente.", "error");
+                    saveLocalAndRender(newLog);
+                }
+            } else {
+                saveLocalAndRender(newLog);
+                showToast("Guardado en tu iPhone con éxito.");
+            }
+
+            // RESET DEL FORMULARIO
+            soundNotes.value = "";
+            currentRecordedBase64 = null;
+            recordTimer.textContent = "00:00";
+            recordStatus.textContent = "Listo para capturar";
+            recordStatus.className = "text-xs font-semibold text-slate-300";
+            btnSave.disabled = true;
+            btnSave.className = "w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs";
+            btnSave.innerHTML = `
+                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                <span>Guardar Registro</span>
+            `;
+        });
+
+        function saveLocalAndRender(log) {
+            soundsList.unshift(log);
+            localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
+            renderHistory();
+        }
+
+        // GESTIÓN DEL MODAL DE AJUSTES
+        btnSettings.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+        closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
+        
+        btnSaveSettings.addEventListener('click', () => {
+            const raw = firebaseConfigInput.value.trim();
+            if (!raw) {
+                showToast("Por favor pega un JSON de configuración válido.", "error");
+                return;
+            }
+            try {
+                JSON.parse(raw);
+                localStorage.setItem('sonitrack_firebase_cfg', raw);
+                settingsModal.classList.add('hidden');
+                showToast("Configuración de nube guardada. Reconectando...");
+                initAppDatabase();
+            } catch (e) {
+                showToast("Formato JSON de configuración incorrecto.", "error");
+            }
+        });
+
+        btnClearSettings.addEventListener('click', () => {
+            localStorage.removeItem('sonitrack_firebase_cfg');
+            firebaseConfigInput.value = "";
+            settingsModal.classList.add('hidden');
+            showToast("Sincronización en la nube desactivada.");
+            initAppDatabase();
+        });
+
+        // EXPORTACIÓN EXCEL CSV
+        btnExportCsv.addEventListener('click', () => {
+            if (soundsList.length === 0) {
+                showToast("No tienes ruidos para exportar.", "info");
+                return;
+            }
+            let csv = "data:text/csv;charset=utf-8,Fecha,Hora,Categoria,Intensidad,Notas\n";
+            soundsList.forEach(s => {
+                const date = new Date(s.timestamp).toLocaleDateString('es-ES');
+                const time = new Date(s.timestamp).toLocaleTimeString('es-ES');
+                const cleanNotes = (s.notes || "").replace(/"/g, '""');
+                csv += `"${date}","${time}","${s.category}","${s.intensity}","${cleanNotes}"\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csv));
+            link.setAttribute("download", `SoniTrack_Reporte.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        filterCategory.addEventListener('change', renderHistory);
+
+        function resizeCanvas() {
+            waveCanvas.width = waveCanvas.parentElement.clientWidth;
+            waveCanvas.height = waveCanvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // ARRANCAR BASE DE DATOS E HISTORIAL
+        initAppDatabase();
+
+    </script>
+</body>
+</html>
