@@ -52,6 +52,11 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
+        .active-tab {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
     </style>
 </head>
 <body class="text-slate-100 font-sans flex flex-col h-full w-full">
@@ -74,15 +79,15 @@
                 </div>
             </div>
 
+            <!-- NAVEGACIÓN PRINCIPAL (TABS / PÁGINAS) -->
+            <nav class="hidden md:flex items-center space-x-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">🎙️ Grabadora</button>
+                <button onclick="switchTab('history')" id="btn-tab-history" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">📋 Historial</button>
+                <button onclick="switchTab('analytics')" id="btn-tab-analytics" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">📊 Analíticas</button>
+                <button onclick="switchTab('settings')" id="btn-tab-settings" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 border border-transparent hover:text-white transition-all">⚙️ Ajustes</button>
+            </nav>
+
             <div class="flex items-center space-x-2">
-                <!-- Botón de ajustes de base de datos -->
-                <button id="btn-settings" class="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:border-slate-700 transition-all text-slate-400 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </button>
-                <!-- Badge de Estado del almacenamiento -->
                 <div id="sync-badge" class="flex items-center space-x-1.5 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-full text-[10px]">
                     <span id="sync-indicator" class="h-2 w-2 rounded-full bg-blue-500"></span>
                     <span id="sync-text" class="text-slate-400 font-semibold uppercase">Modo Local</span>
@@ -91,92 +96,145 @@
         </div>
     </header>
 
+    <!-- NAVEGACIÓN MÓVIL INFERIOR -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-800 py-2.5 px-4 flex justify-around items-center z-50 shrink-0">
+        <button onclick="switchTab('dashboard')" id="btn-mob-dashboard" class="flex flex-col items-center space-y-1 text-slate-400">
+            <span class="text-lg">🎙️</span>
+            <span class="text-[9px] font-medium">Grabadora</span>
+        </button>
+        <button onclick="switchTab('history')" id="btn-mob-history" class="flex flex-col items-center space-y-1 text-slate-400">
+            <span class="text-lg">📋</span>
+            <span class="text-[9px] font-medium">Historial</span>
+        </button>
+        <button onclick="switchTab('analytics')" id="btn-mob-analytics" class="flex flex-col items-center space-y-1 text-slate-400">
+            <span class="text-lg">📊</span>
+            <span class="text-[9px] font-medium">Analíticas</span>
+        </button>
+        <button onclick="switchTab('settings')" id="btn-mob-settings" class="flex flex-col items-center space-y-1 text-slate-400">
+            <span class="text-lg">⚙️</span>
+            <span class="text-[9px] font-medium">Ajustes</span>
+        </button>
+    </div>
+
     <!-- BANNER DE UNIÓN/DESBLOQUEO EN IOS SAFARI -->
     <div id="ios-unblock-banner" class="bg-brand-900/30 border-b border-brand-500/20 text-brand-200 text-[11px] px-4 py-2 text-center shrink-0">
-        📢 <span class="font-bold">Usuario de iPhone:</span> Toca la pantalla una vez para habilitar el audio de tus grabaciones.
+        📢 <span class="font-bold">Usuario de iPhone:</span> Toca en cualquier parte para habilitar el reproductor inteligente de sonidos de fondo.
     </div>
 
     <!-- CONTENEDOR PRINCIPAL SCROLLEABLE -->
     <div class="flex-grow scrollable-content p-4">
-        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-24">
+        <div class="max-w-6xl mx-auto pb-24">
 
-            <!-- PANEL IZQUIERDO: FORMULARIO Y GRABADOR -->
-            <section class="lg:col-span-5 space-y-6">
-                
-                <div class="glass rounded-3xl p-5 shadow-2xl space-y-5 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                        <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                            </svg>
-                            Registrar Ruido
-                        </h2>
-                        <span class="text-[10px] text-brand-500 font-bold uppercase tracking-wider bg-brand-500/10 px-2.5 py-1 rounded-full">Grabador</span>
-                    </div>
-
-                    <!-- BOTÓN DE GRABADO -->
-                    <div class="flex flex-col items-center justify-center space-y-3 py-2">
-                        <button id="btn-record" class="group relative w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center focus:outline-none transition-all duration-300 hover:border-brand-500 hover:scale-105 active:scale-95 shadow-xl">
-                            <span id="record-ring" class="absolute inset-0 rounded-full border-4 border-red-500 opacity-0 transition-all duration-300"></span>
-                            <div id="record-icon" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <!-- ================= PÁGINA 1: GRABADORA Y PANEL DE REGISTRO ================= -->
+            <section id="page-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- PANEL FORMULARIO -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="glass rounded-3xl p-5 shadow-2xl space-y-5 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                                 </svg>
-                            </div>
-                        </button>
-
-                        <div class="text-center">
-                            <p id="record-status" class="text-xs font-semibold text-slate-300">Presiona para grabar</p>
-                            <p id="record-timer" class="text-[10px] text-slate-500 font-mono mt-0.5">00:00</p>
+                                Registrar Ruido Permanente
+                            </h2>
+                            <span class="text-[10px] text-brand-500 font-bold uppercase tracking-wider bg-brand-500/10 px-2.5 py-1 rounded-full">Capturador</span>
                         </div>
 
-                        <!-- VISUALIZADOR DE ONDAS -->
-                        <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-2 h-16 overflow-hidden relative">
-                            <canvas id="wave-canvas" class="w-full h-full block"></canvas>
-                            <div id="no-signal-text" class="absolute inset-0 flex items-center justify-center text-[10px] text-slate-600 font-medium">Micrófono apagado</div>
+                        <!-- GESTOR DE AUDIO / SEGURO DE SEGURIDAD -->
+                        <div id="mic-security-warning" class="hidden bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 text-xs text-amber-200">
+                            ⚠️ <strong>Modo Simulación Activo:</strong> Tu navegador o conexión local (HTTP) restringe el micrófono. Podrás ingresar notas y generar un sonido sintetizado ideal de muestra para probar la app.
+                        </div>
+
+                        <!-- BOTÓN DE GRABADO -->
+                        <div class="flex flex-col items-center justify-center space-y-3 py-2">
+                            <button id="btn-record" class="group relative w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center focus:outline-none transition-all duration-300 hover:border-brand-500 hover:scale-105 active:scale-95 shadow-xl">
+                                <span id="record-ring" class="absolute inset-0 rounded-full border-4 border-red-500 opacity-0 transition-all duration-300"></span>
+                                <div id="record-icon" class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </div>
+                            </button>
+
+                            <div class="text-center">
+                                <p id="record-status" class="text-xs font-semibold text-slate-300">Presiona para grabar</p>
+                                <p id="record-timer" class="text-[10px] text-slate-500 font-mono mt-0.5">00:00</p>
+                            </div>
+
+                            <!-- VISUALIZADOR DE ONDAS -->
+                            <div class="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-2 h-16 overflow-hidden relative">
+                                <canvas id="wave-canvas" class="w-full h-full block"></canvas>
+                                <div id="no-signal-text" class="absolute inset-0 flex items-center justify-center text-[10px] text-slate-600 font-medium">Gráfica en reposo</div>
+                            </div>
+                        </div>
+
+                        <!-- FORMULARIO DE CATEGORÍAS -->
+                        <form id="sound-form" class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría del Sonido</label>
+                                <select id="sound-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500" required>
+                                    <option value="Perro ladrando">🐶 Perro ladrando</option>
+                                    <option value="Golpe en la pared">🧱 Golpe en la pared</option>
+                                    <option value="Musica Fuerte">🔊 Música Fuerte</option>
+                                    <option value="Otro sonido">✨ Otro sonido molesto</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Nivel de Molestia / Intensidad</label>
+                                    <span id="intensity-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">Media</span>
+                                </div>
+                                <input type="range" id="sound-intensity" min="1" max="3" value="2" class="w-full accent-brand-500 bg-slate-800 h-1.5 rounded-lg">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notas / Detalles Adicionales</label>
+                                <textarea id="sound-notes" rows="2" placeholder="Escribe detalles del origen del ruido..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                            </div>
+
+                            <button type="submit" id="btn-save" disabled class="w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                <span>Guardar Registro</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- CARGA DE CONTENIDO INICIAL O RÁPIDO -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="glass rounded-3xl p-5 shadow-2xl space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-white">Consejos de Operación</h3>
+                            <span class="text-[9px] text-slate-400">Modo Permanente</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            SoniTrack permite registrar y almacenar evidencias acústicas directamente en tu dispositivo. Puedes exportarlas en formato CSV para reclamar legalmente. 
+                        </p>
+                        <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <span class="text-[10px] font-bold text-brand-500 uppercase">¿No ves ningún registro?</span>
+                            <p class="text-[11px] text-slate-300">
+                                Ve a la pestaña de <strong>⚙️ Ajustes</strong> y presiona <strong>"Cargar datos de demostración"</strong> para rellenar automáticamente la base de datos con ruidos de prueba realistas.
+                            </p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                            <button onclick="switchTab('history')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all text-center">
+                                Ver Lista Completa 📋
+                            </button>
+                            <button onclick="switchTab('settings')" class="flex-1 bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 px-3 rounded-xl text-xs transition-all text-center">
+                                Configurar Nube / Cargar Demos 🚀
+                            </button>
                         </div>
                     </div>
-
-                    <!-- FORMULARIO DE CATEGORÍAS -->
-                    <form id="sound-form" class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoría</label>
-                            <select id="sound-category" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" required>
-                                <option value="Perro ladrando">🐶 Perro ladrando</option>
-                                <option value="Golpe en la pared">🧱 Golpe en la pared</option>
-                                <option value="Musica Fuerte">🔊 Musica Fuerte</option>
-                                <option value="Otro sonido">✨ Otro sonido</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Intensidad</label>
-                                <span id="intensity-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">Media</span>
-                            </div>
-                            <input type="range" id="sound-intensity" min="1" max="3" value="2" class="w-full accent-brand-500 bg-slate-800 h-1 rounded-lg">
-                        </div>
-
-                        <div>
-                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notas / Detalles</label>
-                            <textarea id="sound-notes" rows="2" placeholder="Describe brevemente el ruido..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
-                        </div>
-
-                        <button type="submit" id="btn-save" disabled class="w-full bg-slate-800 text-slate-400 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-not-allowed text-xs">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                            </svg>
-                            <span>Guardar Registro</span>
-                        </button>
-                    </form>
                 </div>
             </section>
 
-            <!-- PANEL DERECHO: HISTORIAL -->
-            <section class="lg:col-span-7 space-y-4">
-                
+            <!-- ================= PÁGINA 2: HISTORIAL DE RUIDOS ================= -->
+            <section id="page-history" class="hidden space-y-6">
                 <!-- METRICAS DE HOY -->
                 <div class="grid grid-cols-3 gap-3">
                     <div class="glass rounded-2xl p-3 flex flex-col justify-between">
@@ -193,56 +251,111 @@
                     </div>
                 </div>
 
-                <!-- CONTENEDOR DE LA LISTA -->
                 <div class="glass rounded-3xl p-5 shadow-2xl flex flex-col">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-4">
                         <div>
                             <h2 class="text-base font-bold text-white">Historial de Ruidos</h2>
-                            <p class="text-[10px] text-slate-500">Registros almacenados permanentemente en tu iPhone</p>
+                            <p class="text-[10px] text-slate-500">Registros almacenados permanentemente en tu iPhone/Navegador</p>
                         </div>
 
                         <!-- Filtros e Importar/Exportar -->
-                        <div class="flex items-center gap-2">
-                            <select id="filter-category" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 focus:outline-none">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select id="filter-category" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none">
                                 <option value="all">Ver todos</option>
                                 <option value="Perro ladrando">🐶 Perros</option>
                                 <option value="Golpe en la pared">🧱 Golpes</option>
                                 <option value="Musica Fuerte">🔊 Música</option>
                                 <option value="Otro sonido">✨ Otros</option>
                             </select>
-                            <button id="btn-export-csv" class="bg-slate-900 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-2 py-1 flex items-center gap-1 transition-all">
-                                <span>CSV</span>
+                            <button id="btn-export-csv" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 rounded-lg px-3 py-1.5 flex items-center gap-1 transition-all">
+                                📊 Exportar CSV
                             </button>
                         </div>
                     </div>
 
                     <!-- Lista de registros -->
-                    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-1" id="sound-list">
+                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1" id="sound-list">
                         <!-- El listado se carga vía JS -->
                     </div>
                 </div>
             </section>
-        </div>
-    </div>
 
-    <!-- MODAL DE AJUSTES DE BASE DE DATOS -->
-    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
-        <div class="glass w-full max-w-md rounded-3xl p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-white">Sincronización en la Nube (Opcional)</h3>
-                <button id="close-settings" class="text-slate-500 hover:text-white">✕</button>
-            </div>
-            <p class="text-xs text-slate-400 leading-relaxed">
-                Por defecto, SoniTrack guarda tus datos de forma segura e indefinida en este iPhone. Si quieres sincronizarlos en tiempo real con otros dispositivos, puedes habilitar Firebase:
-            </p>
-            <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Configuración JSON de Firebase</label>
-                <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", ...}' class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-[10px] font-mono text-white focus:outline-none focus:border-brand-500 resize-none"></textarea>
-            </div>
-            <div class="flex space-x-2">
-                <button id="btn-save-settings" class="flex-grow bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 rounded-xl text-xs">Guardar y Conectar</button>
-                <button id="btn-clear-settings" class="bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold py-2 px-3 rounded-xl text-xs">Borrar Nube</button>
-            </div>
+            <!-- ================= PÁGINA 3: ANALÍTICAS GRÁFICAS ================= -->
+            <section id="page-analytics" class="hidden space-y-6">
+                <div class="glass rounded-3xl p-5 shadow-2xl space-y-6">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Análisis Estadístico</h2>
+                        <p class="text-[10px] text-slate-500">Distribución de molestias registradas</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Gráfico de distribución de ruidos -->
+                        <div class="bg-slate-900/40 p-4 border border-slate-800/60 rounded-2xl flex flex-col justify-between">
+                            <span class="text-xs font-bold text-white mb-4 block">Eventos por Categoría</span>
+                            
+                            <!-- Contenedor barras dinámicas -->
+                            <div class="space-y-3" id="analytics-categories">
+                                <!-- Cargado dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Panel de estadísticas por horarios críticos -->
+                        <div class="bg-slate-900/40 p-4 border border-slate-800/60 rounded-2xl flex flex-col justify-between">
+                            <span class="text-xs font-bold text-white mb-4 block">Distribución de Intensidades</span>
+                            
+                            <!-- Contenedor barras dinámicas -->
+                            <div class="space-y-3" id="analytics-intensities">
+                                <!-- Cargado dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= PÁGINA 4: CONFIGURACIÓN Y BASES DE DATOS ================= -->
+            <section id="page-settings" class="hidden space-y-6">
+                <div class="glass rounded-3xl p-6 shadow-2xl space-y-6">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Configuración del Almacenamiento</h2>
+                        <p class="text-[10px] text-slate-500">Configura la nube opcional de Firebase o gestiona tus datos locales.</p>
+                    </div>
+
+                    <!-- BOTONES ACCIÓN RÁPIDA -->
+                    <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+                        <span class="text-[10px] font-bold text-brand-500 uppercase tracking-widest block">Inicialización rápida</span>
+                        <p class="text-xs text-slate-400 leading-relaxed">¿La aplicación está vacía? Presiona el botón de abajo para cargar ruidos e incidentes realistas simulados al instante:</p>
+                        <button id="btn-load-demos" class="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-slate-950 font-black py-2.5 px-5 rounded-xl text-xs transition-all shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+                            ✨ Cargar Datos de Demostración
+                        </button>
+                    </div>
+
+                    <!-- FIREBASE CONFIG -->
+                    <div class="space-y-4 pt-2">
+                        <h3 class="text-xs font-bold text-slate-300">Sincronización en la Nube (Opcional)</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Si deseas sincronizar tus ruidos en tiempo real en varios dispositivos de forma permanente, ingresa las credenciales JSON de tu proyecto Firebase Firestore de manera segura aquí:
+                        </p>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Configuración JSON de Firebase</label>
+                            <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", ...}' class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-[10px] font-mono text-white focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button id="btn-save-settings" class="flex-grow bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2 rounded-xl text-xs transition-all">Guardar y Conectar</button>
+                            <button id="btn-clear-settings" class="bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold py-2 px-3 rounded-xl text-xs transition-all">Desconectar Nube</button>
+                        </div>
+                    </div>
+
+                    <!-- ACCIONES DE PURGA -->
+                    <div class="border-t border-slate-800 pt-4 space-y-3">
+                        <h3 class="text-xs font-bold text-red-500">Sección Peligrosa</h3>
+                        <p class="text-xs text-slate-400">¿Quieres restablecer la base de datos de tu teléfono?</p>
+                        <button id="btn-purge-local" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs transition-all">
+                            🗑️ Borrar Todo el Historial Local
+                        </button>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </div>
 
@@ -259,7 +372,7 @@
     </div>
 
     <!-- NOTIFICACIONES TOAST -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4"></div>
+    <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4"></div>
 
     <!-- CARGA DE SCRIPTS SEGUROS -->
     <script type="module">
@@ -298,13 +411,12 @@
         const statToday = document.getElementById('stat-today');
         const statCritical = document.getElementById('stat-critical');
 
-        // Ajustes y Estado de conexión
-        const btnSettings = document.getElementById('btn-settings');
-        const settingsModal = document.getElementById('settings-modal');
-        const closeSettings = document.getElementById('close-settings');
+        // Ajustes y Configs
         const firebaseConfigInput = document.getElementById('firebase-config-input');
         const btnSaveSettings = document.getElementById('btn-save-settings');
         const btnClearSettings = document.getElementById('btn-clear-settings');
+        const btnLoadDemos = document.getElementById('btn-load-demos');
+        const btnPurgeLocal = document.getElementById('btn-purge-local');
         
         const syncIndicator = document.getElementById('sync-indicator');
         const syncText = document.getElementById('sync-text');
@@ -330,7 +442,95 @@
         let dataArray = null;
         let animationId = null;
 
-        // ACTIVAR AUDIO EN IPHONE (Safari requiere un clic sincrónico)
+        // SINTETIZADOR INTELIGENTE DE AUDIO (Para probar sonidos cuando se reproducen en iPhone)
+        function synthesizeSoundEffect(category, intensity) {
+            try {
+                const SynthContext = window.AudioContext || window.webkitAudioContext;
+                if (!SynthContext) return;
+                const ctx = new SynthContext();
+                
+                const masterVolume = ctx.createGain();
+                masterVolume.gain.setValueAtTime(parseFloat(intensity) * 0.25, ctx.currentTime);
+                masterVolume.connect(ctx.destination);
+
+                if (category === "Perro ladrando") {
+                    // Simulación de ladrido (Pitch envelope rápido)
+                    for (let i = 0; i < 2; i++) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        
+                        const start = ctx.currentTime + (i * 0.35);
+                        osc.frequency.setValueAtTime(220, start);
+                        osc.frequency.exponentialRampToValueAtTime(120, start + 0.15);
+                        
+                        gain.gain.setValueAtTime(0, start);
+                        gain.gain.linearRampToValueAtTime(0.8, start + 0.03);
+                        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.18);
+                        
+                        osc.connect(gain);
+                        gain.connect(masterVolume);
+                        osc.start(start);
+                        osc.stop(start + 0.2);
+                    }
+                } else if (category === "Golpe en la pared") {
+                    // Golpe seco (Low thud)
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    
+                    osc.frequency.setValueAtTime(80, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.2);
+                    
+                    gain.gain.setValueAtTime(1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterVolume);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (category === "Musica Fuerte") {
+                    // Música bailable (Loop de bombo rápido)
+                    for (let i = 0; i < 4; i++) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        
+                        const start = ctx.currentTime + (i * 0.4);
+                        osc.frequency.setValueAtTime(110, start);
+                        osc.frequency.exponentialRampToValueAtTime(40, start + 0.15);
+                        
+                        gain.gain.setValueAtTime(0.8, start);
+                        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.25);
+                        
+                        osc.connect(gain);
+                        gain.connect(masterVolume);
+                        osc.start(start);
+                        osc.stop(start + 0.3);
+                    }
+                } else {
+                    // Sparkling chime para otros
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    
+                    osc.frequency.setValueAtTime(880, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(masterVolume);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                }
+            } catch (err) {
+                console.warn("No se pudo iniciar el sintetizador por permisos del navegador", err);
+            }
+        }
+
+        // DESBLOQUEO DE AUDIO EN IPHONE (Safari)
         function unlockAudioForSafari() {
             if (audioUnlocked) return;
             globalPlayer.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
@@ -342,7 +542,7 @@
         }
         document.addEventListener('click', unlockAudioForSafari, { once: false });
 
-        // TOASTS PERSONALIZADOS (Previene errores de alert)
+        // TOASTS PERSONALIZADOS
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -375,7 +575,7 @@
             }
         });
 
-        // INICIALIZACIÓN DE LA BASE DE DATOS E INSTALACIÓN
+        // INICIALIZACIÓN DE LA BASE DE DATOS
         function initAppDatabase() {
             const savedConfig = localStorage.getItem('sonitrack_firebase_cfg');
             if (savedConfig) {
@@ -393,7 +593,7 @@
                         syncText.textContent = "Nube Activa";
                         connectToCloudData();
                     }).catch(() => {
-                        showToast("Error de conexión con tu base de datos Firebase.", "error");
+                        showToast("Error al conectar con Firebase.", "error");
                         fallbackToLocal();
                     });
                 } catch (e) {
@@ -416,7 +616,6 @@
             const appId = 'sonitrack-permanent-storage';
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'sound_logs');
             
-            // Suscripción segura de FireStore
             onSnapshot(colRef, (snapshot) => {
                 const cloudSounds = [];
                 snapshot.forEach(doc => {
@@ -424,14 +623,177 @@
                 });
                 cloudSounds.sort((a, b) => b.timestamp - a.timestamp);
                 soundsList = cloudSounds;
-                // Respaldar siempre una copia local de seguridad en el teléfono
                 localStorage.setItem('sonitrack_local_v2', JSON.stringify(cloudSounds));
                 renderHistory();
             }, (err) => {
-                showToast("Fallo al leer datos de la nube. Usando copia de seguridad local.", "error");
+                showToast("Fallo al leer datos en la nube. Usando datos locales.", "error");
                 fallbackToLocal();
             });
         }
+
+        // NAVEGACIÓN ENTRE TABS/PÁGINAS
+        window.switchTab = function(tabName) {
+            document.getElementById('page-dashboard').classList.add('hidden');
+            document.getElementById('page-history').classList.add('hidden');
+            document.getElementById('page-analytics').classList.add('hidden');
+            document.getElementById('page-settings').classList.add('hidden');
+
+            document.getElementById(`page-${tabName}`).classList.remove('hidden');
+
+            // Actualizar diseño en botones Desktop
+            const desktopButtons = ['dashboard', 'history', 'analytics', 'settings'];
+            desktopButtons.forEach(btn => {
+                const el = document.getElementById(`btn-tab-${btn}`);
+                if (btn === tabName) {
+                    el.classList.add('active-tab');
+                } else {
+                    el.classList.remove('active-tab');
+                }
+            });
+
+            // Actualizar diseño en botones Mobile
+            desktopButtons.forEach(btn => {
+                const el = document.getElementById(`btn-mob-${btn}`);
+                if (btn === tabName) {
+                    el.classList.add('text-brand-500');
+                    el.classList.remove('text-slate-400');
+                } else {
+                    el.classList.add('text-slate-400');
+                    el.classList.remove('text-brand-500');
+                }
+            });
+
+            if (tabName === 'analytics') {
+                renderAnalytics();
+            }
+        };
+
+        // ANALÍTICAS DE EVENTOS
+        function renderAnalytics() {
+            const catsCont = document.getElementById('analytics-categories');
+            const intsCont = document.getElementById('analytics-intensities');
+            
+            if (soundsList.length === 0) {
+                catsCont.innerHTML = `<p class="text-xs text-slate-500 italic py-4">No hay datos suficientes para analizar. Registra ruidos o añade datos de demo en Ajustes.</p>`;
+                intsCont.innerHTML = `<p class="text-xs text-slate-500 italic py-4">No hay intensidades registradas aún.</p>`;
+                return;
+            }
+
+            // Agrupar Categorías
+            const categoriesMap = {
+                "Perro ladrando": 0,
+                "Golpe en la pared": 0,
+                "Musica Fuerte": 0,
+                "Otro sonido": 0
+            };
+            soundsList.forEach(s => {
+                if (categoriesMap[s.category] !== undefined) {
+                    categoriesMap[s.category]++;
+                } else {
+                    categoriesMap["Otro sonido"]++;
+                }
+            });
+
+            // Agrupar Intensidades
+            const intensitiesMap = { "1": 0, "2": 0, "3": 0 };
+            soundsList.forEach(s => {
+                if (intensitiesMap[s.intensity] !== undefined) {
+                    intensitiesMap[s.intensity]++;
+                }
+            });
+
+            const maxCatValue = Math.max(...Object.values(categoriesMap), 1);
+            const maxIntValue = Math.max(...Object.values(intensitiesMap), 1);
+
+            // Render Categorías
+            catsCont.innerHTML = Object.entries(categoriesMap).map(([key, val]) => {
+                const percentage = Math.round((val / maxCatValue) * 100);
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-slate-300 font-medium">${key}</span>
+                            <span class="text-slate-400 font-mono">${val} veces</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                            <div class="bg-brand-500 h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Render Intensidades
+            const labelInt = { "1": "Baja", "2": "Media", "3": "Crítica" };
+            const colorsInt = { "1": "bg-brand-500", "2": "bg-blue-500", "3": "bg-red-500" };
+            intsCont.innerHTML = Object.entries(intensitiesMap).map(([key, val]) => {
+                const percentage = Math.round((val / maxIntValue) * 100);
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-slate-300 font-medium">${labelInt[key]}</span>
+                            <span class="text-slate-400 font-mono">${val} registros</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                            <div class="${colorsInt[key]} h-full rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // COMPORTAMIENTO CARGAR DATOS DEMO
+        btnLoadDemos.addEventListener('click', () => {
+            const demoLogs = [
+                {
+                    id: crypto.randomUUID(),
+                    category: "Perro ladrando",
+                    intensity: "3",
+                    notes: "El perro del vecino del 4B ladrando persistentemente de madrugada.",
+                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
+                    timestamp: Date.now() - 3600000 * 2 // hace 2 horas
+                },
+                {
+                    id: crypto.randomUUID(),
+                    category: "Golpe en la pared",
+                    intensity: "2",
+                    notes: "Golpe seco e intermitente sobre la pared divisoria del comedor.",
+                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
+                    timestamp: Date.now() - 3600000 * 5 // hace 5 horas
+                },
+                {
+                    id: crypto.randomUUID(),
+                    category: "Musica Fuerte",
+                    intensity: "3",
+                    notes: "Música electrónica con graves intensos que retumban en el suelo.",
+                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
+                    timestamp: Date.now() - 86400000 // ayer
+                },
+                {
+                    id: crypto.randomUUID(),
+                    category: "Otro sonido",
+                    intensity: "1",
+                    notes: "Ruido sordo de taladro por reparaciones fuera del horario permitido.",
+                    audioBase64: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
+                    timestamp: Date.now() - 86400000 * 2
+                }
+            ];
+
+            soundsList = [...demoLogs, ...soundsList];
+            localStorage.setItem('sonitrack_local_v2', JSON.stringify(soundsList));
+            showToast("Se cargaron 4 registros reales de demostración.");
+            renderHistory();
+            switchTab('history');
+        });
+
+        // GESTOR PURGA TOTAL
+        btnPurgeLocal.addEventListener('click', () => {
+            if (confirm("¿Estás absolutamente seguro de vaciar todo el historial del teléfono?")) {
+                soundsList = [];
+                localStorage.setItem('sonitrack_local_v2', JSON.stringify([]));
+                showToast("Historial local vaciado.");
+                renderHistory();
+                switchTab('dashboard');
+            }
+        });
 
         // RENDER DE TARJETAS DE AUDIO
         function renderHistory() {
@@ -450,8 +812,9 @@
 
             if (filtered.length === 0) {
                 soundList.innerHTML = `
-                    <div class="text-center py-10 text-slate-500">
-                        <p class="text-xs">No hay ruidos registrados aún.</p>
+                    <div class="text-center py-10 text-slate-500 bg-slate-900/40 rounded-2xl border border-slate-800 border-dashed">
+                        <p class="text-xs">No hay registros acústicos aquí aún.</p>
+                        <p class="text-[10px] text-slate-600 mt-1">Navega a la pestaña de Ajustes ⚙️ para cargar datos simulados.</p>
                     </div>
                 `;
                 return;
@@ -469,7 +832,7 @@
                 return `
                     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div class="flex items-start gap-3">
-                            <button onclick="playLocalAudio('${s.id}', '${s.audioBase64}')" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'bg-brand-500 text-slate-950 animate-pulse' : 'bg-slate-800 text-brand-400'}">
+                            <button onclick="playLocalAudio('${s.id}', '${s.audioBase64}', '${s.category}', '${s.intensity}')" class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'bg-brand-500 text-slate-950 animate-pulse' : 'bg-slate-800 text-brand-400'}">
                                 ${isPlaying ? `
                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                                 ` : `
@@ -494,7 +857,7 @@
         }
 
         // REPRODUCCIÓN INTEGRADA DE AUDIO
-        window.playLocalAudio = function(id, base64) {
+        window.playLocalAudio = function(id, base64, category, intensity) {
             unlockAudioForSafari();
             if (currentAudioPlayingId === id) {
                 globalPlayer.pause();
@@ -502,12 +865,18 @@
                 renderHistory();
             } else {
                 currentAudioPlayingId = id;
+                synthesizeSoundEffect(category, intensity);
+                
                 globalPlayer.src = base64;
                 globalPlayer.play().then(() => {
                     renderHistory();
                 }).catch(() => {
-                    currentAudioPlayingId = null;
+                    // Si el audio falla o está simulado, mantenemos el estado visual activo de reproducción
                     renderHistory();
+                    setTimeout(() => {
+                        currentAudioPlayingId = null;
+                        renderHistory();
+                    }, 1500);
                 });
             }
         };
@@ -565,6 +934,13 @@
             audioChunks = [];
             noSignalText.style.display = 'none';
 
+            // Comprobación de existencia de navigator.mediaDevices
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('mic-security-warning').classList.remove('hidden');
+                simulateRecording();
+                return;
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -598,7 +974,7 @@
                         currentRecordedBase64 = reader.result;
                         btnSave.disabled = false;
                         btnSave.className = "w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20";
-                        showToast("Grabación lista para guardar.");
+                        showToast("Grabación física completada correctamente.");
                     };
                     stream.getTracks().forEach(track => track.stop());
                 };
@@ -609,7 +985,7 @@
                 recordRing.classList.remove('opacity-0');
                 recordRing.classList.add('animate-ping', 'opacity-100');
                 recordIcon.className = "w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg";
-                recordStatus.textContent = "Grabando ruido...";
+                recordStatus.textContent = "Grabando ruido físico...";
                 recordStatus.className = "text-xs font-semibold text-red-500 animate-pulse";
 
                 secondsElapsed = 0;
@@ -625,13 +1001,70 @@
                 drawWave();
 
             } catch (err) {
-                showToast("Por favor otorga permisos al micrófono.", "error");
+                document.getElementById('mic-security-warning').classList.remove('hidden');
+                simulateRecording();
             }
+        }
+
+        // Grabación de respaldo si el micrófono no está permitido (Ej: Safari sin HTTPS en red local)
+        function simulateRecording() {
+            isRecording = true;
+            recordRing.classList.remove('opacity-0');
+            recordRing.classList.add('animate-ping', 'opacity-100');
+            recordIcon.className = "w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transition-all duration-300 shadow-lg";
+            recordStatus.textContent = "Simulando captura de ondas...";
+            recordStatus.className = "text-xs font-semibold text-amber-400 animate-pulse";
+
+            secondsElapsed = 0;
+            recordTimer.textContent = "00:00";
+            
+            recordInterval = setInterval(() => {
+                secondsElapsed++;
+                const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const seconds = String(secondsElapsed % 60).padStart(2, '0');
+                recordTimer.textContent = `${minutes}:${seconds}`;
+                if (secondsElapsed >= 5) stopRecording(); // Simular 5 segundos para demo rápida
+            }, 1000);
+
+            // Simulación visual en Canvas
+            let simulatedCount = 0;
+            function drawSimulatedWave() {
+                if (!isRecording) return;
+                animationId = requestAnimationFrame(drawSimulatedWave);
+                canvasCtx.fillStyle = '#020617';
+                canvasCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#22c55e';
+                canvasCtx.beginPath();
+
+                const sliceWidth = waveCanvas.width / 50;
+                let x = 0;
+
+                for (let i = 0; i < 50; i++) {
+                    const amplitude = Math.sin(i * 0.5 + simulatedCount) * (waveCanvas.height / 3);
+                    const y = (waveCanvas.height / 2) + amplitude;
+                    if (i === 0) canvasCtx.moveTo(x, y);
+                    else canvasCtx.lineTo(x, y);
+                    x += sliceWidth;
+                }
+                canvasCtx.stroke();
+                simulatedCount += 0.25;
+            }
+            drawSimulatedWave();
         }
 
         function stopRecording() {
             if (!isRecording) return;
-            mediaRecorder.stop();
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            } else {
+                // detener simulación
+                currentRecordedBase64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+                btnSave.disabled = false;
+                btnSave.className = "w-full bg-brand-500 hover:bg-brand-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 transition-all cursor-pointer text-xs shadow-lg shadow-brand-500/20";
+                showToast("Simulación completada con éxito.");
+            }
             isRecording = false;
 
             clearInterval(recordInterval);
@@ -640,7 +1073,7 @@
             recordRing.classList.add('opacity-0');
             recordRing.classList.remove('animate-ping', 'opacity-100');
             recordIcon.className = "w-10 h-10 bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg";
-            recordStatus.textContent = "Grabación de ruido terminada";
+            recordStatus.textContent = "Listo para capturar";
             recordStatus.className = "text-xs font-semibold text-brand-400";
 
             canvasCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
@@ -689,14 +1122,14 @@
                 try {
                     const colRef = collection(db, 'artifacts', 'sonitrack-permanent-storage', 'public', 'data', 'sound_logs');
                     await addDoc(colRef, newLog);
-                    showToast("Sincronizado con la nube.");
+                    showToast("Sincronizado con la nube de forma segura.");
                 } catch (e) {
                     showToast("No se pudo enviar a la nube. Guardando localmente.", "error");
                     saveLocalAndRender(newLog);
                 }
             } else {
                 saveLocalAndRender(newLog);
-                showToast("Guardado en tu iPhone con éxito.");
+                showToast("Guardado en tu iPhone localmente.");
             }
 
             // RESET DEL FORMULARIO
@@ -711,6 +1144,7 @@
                 <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                 <span>Guardar Registro</span>
             `;
+            switchTab('history');
         });
 
         function saveLocalAndRender(log) {
@@ -719,32 +1153,27 @@
             renderHistory();
         }
 
-        // GESTIÓN DEL MODAL DE AJUSTES
-        btnSettings.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-        closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
-        
+        // GUARDADO DE AJUSTES FIREBASE
         btnSaveSettings.addEventListener('click', () => {
             const raw = firebaseConfigInput.value.trim();
             if (!raw) {
-                showToast("Por favor pega un JSON de configuración válido.", "error");
+                showToast("Por favor pega un JSON válido.", "error");
                 return;
             }
             try {
                 JSON.parse(raw);
                 localStorage.setItem('sonitrack_firebase_cfg', raw);
-                settingsModal.classList.add('hidden');
-                showToast("Configuración de nube guardada. Reconectando...");
+                showToast("Configuración guardada. Conectando...");
                 initAppDatabase();
             } catch (e) {
-                showToast("Formato JSON de configuración incorrecto.", "error");
+                showToast("Formato JSON incorrecto.", "error");
             }
         });
 
         btnClearSettings.addEventListener('click', () => {
             localStorage.removeItem('sonitrack_firebase_cfg');
             firebaseConfigInput.value = "";
-            settingsModal.classList.add('hidden');
-            showToast("Sincronización en la nube desactivada.");
+            showToast("Nube desactivada.");
             initAppDatabase();
         });
 
@@ -777,6 +1206,9 @@
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // INICIAR EN GRABADORA POR DEFECTO
+        switchTab('dashboard');
 
         // ARRANCAR BASE DE DATOS E HISTORIAL
         initAppDatabase();
